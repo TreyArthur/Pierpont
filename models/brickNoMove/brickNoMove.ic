@@ -1,0 +1,32 @@
+<?xml version="1.0" standalone="no"?>
+
+<initialConditions>
+
+ <ic name="Stationary for Day">
+  <data name="grossWeight" units="lbf">50.0</data>
+
+  <data name="bodyXXMomentOfInertia" units="slugf2">0.08</data>
+  <data name="bodyYYMomentOfInertia" units="slugf2">0.17</data>
+  <data name="bodyZZMomentOfInertia" units="slugf2">0.22</data>
+  <data name="bodyXYMomentOfInertia" units="slugf2">0.0</data>
+  <data name="bodyXZMomentOfInertia" units="slugf2">0.0</data>
+  <data name="bodyYZMomentOfInertia" units="slugf2">0.0</data>
+
+  <data name="latitude" units="d">45.0</data>
+  <data name="longitude" units="d">-76.0</data>
+  <data name="altitude" units="f">0.0</data>
+  <data name="referenceWingArea" units="f2">6.0</data>
+
+  <data name="trueAirspeed" units="fs-1">0.0</data>
+  <data name="angleOfAttack" units="d">0.0</data>
+  <data name="angleOfSideslip" units="d">0.0</data>
+  <data name="rollEulerAngle" units="d">0.0</data>
+  <data name="pitchEulerAngle" units="d">0.0</data>
+  <data name="yawEulerAngle" units="d">90.0</data>
+  <data name="rollBodyRate" units="rs-1">0.0</data>
+  <data name="pitchBodyRate" units="rs-1">0.0</data>
+  <data name="yawBodyRate" units="rs-1">0.0</data>
+  <data name="XBodyPositionOfCG" units="fracMAC">0.0</data>
+ </ic>
+
+</initialConditions>

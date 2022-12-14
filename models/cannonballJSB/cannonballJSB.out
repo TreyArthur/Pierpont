@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="no"?>
+
+<outputData>
+
+ <batch name="cannonballJsb.csv" stepSize_s="0.02" endTime_s="27.0">
+  <data name="simTime_s"/>
+  <data name="altitude" />
+  <data name="trueAirspeed" />
+ </batch>
+
+ <dataServer name="dsSet1" hostName="localhost" port="8792">
+  <data name="simTime_s"/>
+ </dataServer>
+
+</outputData>

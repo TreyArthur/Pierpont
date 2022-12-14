@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="no"?>
+
+<outputData>
+
+ <batch name="brickNoMove.csv" stepSize_s="0.01" endTime_s="400.0">
+  <data name="simTime_s"/>
+  <data name="altitude" />
+  <data name="trueAirspeed" />
+  <data name="rollEulerAngle"/>
+  <data name="pitchEulerAngle"/>
+  <data name="yawEulerAngle"/>
+  <data name="rollBodyRate"/>
+  <data name="pitchBodyRate"/>
+  <data name="yawBodyRate"/>
+ </batch>
+
+ <dataServer name="dsSet1" hostName="localhost" port="8792">
+  <data name="simTime_s"/>
+ </dataServer>
+
+</outputData>

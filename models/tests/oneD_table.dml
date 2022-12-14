@@ -1,0 +1,109 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
+<!-- $Revision: 100 $ -->
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+  <fileHeader name="One Dimensional Table Test">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="Trey.Arthur@nasa.gov"/>
+    <creationDate date="2021-04-26"/>
+    <fileVersion>$Revision: 100 $</fileVersion>
+    <description> A test checking 1D data tables </description>
+  </fileHeader>
+
+  <variableDef name="angleOfAttack" varID="alpha" units="deg">
+  </variableDef>
+
+  <variableDef name="Cnp" varID="cnp" units="nd">
+  </variableDef>
+
+  <breakpointDef name="alpha" bpID="ALPHA1" units="deg">
+    <description> Alpha breakpoints for basic and damping aero tables </description>
+    <bpVals> -10., -5., 0., 5., 10., 15., 20., 25., 30., 35., 40., 45. </bpVals>
+  </breakpointDef>
+
+  <function name="Cnp">
+    <description>
+      Damping derivative: yawing moment due to roll rate as a function
+      of angle-of-attack
+    </description>
+    <provenance>
+      <author name="Bruce Jackson" org="NASA Langley Research Center"
+              email="bruce.jackson@nasa.gov"/>
+      <creationDate date="2002-04-04"/>
+    </provenance>
+    <independentVarRef varID="alpha" min="-10.0" max="45.0" extrapolate="neither"/>
+    <!-- Alpha breakpoints -->
+    <dependentVarRef varID="cnp"/>
+
+    <functionDefn name="Cnp_fn">
+      <griddedTable name="Cnp_table">
+        <breakpointRefs>
+          <bpRef bpID="ALPHA1"/>
+        </breakpointRefs>
+        <dataTable> 
+        <!-- -10.,  -5.,   0.,    5.,   10.,   15.,  20.,  25.,  30.,  35.,  40.,  45. -->
+             .061, .052, .052, -.012, -.013, -.024, .050, .150, .130, .158, .240, .150 
+        </dataTable>
+      </griddedTable>
+    </functionDefn>
+  </function>
+
+  <checkData>
+    <staticShot name="AOA 5 deg">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack 5 deg</signalName>
+          <varID>alpha</varID>
+          <signalValue>5.0</signalValue>
+        </signal>
+      </checkInputs>
+
+      <checkOutputs>
+        <signal>
+          <signalName>Cnp at 5 deg</signalName>
+          <varID>cnp</varID>
+          <signalValue>-0.012</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+
+    <staticShot name="AOA 10 deg">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack 10 deg</signalName>
+          <varID>alpha</varID>
+          <signalValue>10.0</signalValue>
+        </signal>
+      </checkInputs>
+
+      <checkOutputs>
+        <signal>
+          <signalName>Cnp at 10 deg</signalName>
+          <varID>cnp</varID>
+          <signalValue>-0.013</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+
+    <staticShot name="AOA 29 deg">
+      <checkInputs>
+        <signal>
+          <signalName>AOA at 29 deg</signalName>
+          <varID>alpha</varID>
+          <signalValue>29.0</signalValue>
+        </signal>
+      </checkInputs>
+
+      <checkOutputs>
+        <signal>
+          <signalName>Cnp at 29 deg AOA</signalName>
+          <varID>cnp</varID>
+          <signalValue>0.15</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+  </checkData>
+
+</DAVEfunc>

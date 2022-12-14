@@ -1,0 +1,154 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
+<!-- $Revision: 1 $ -->
+<DAVEfunc>
+  <fileHeader name="Brick Aerodynamics Model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov"/>
+    <creationDate date="2011-06-07"/>
+    <fileVersion>$Revision: 1 $</fileVersion>         
+    <description>
+      Simple brick aerodynmaic model
+    </description>
+
+  </fileHeader>
+
+  <!-- ================== -->
+  <!--      Constants     -->
+  <!-- ================== -->
+
+  <variableDef name="XBodyPositionOfMRC" varID="xcgr" units="fracMAC" initialValue="0.1">
+    <description> 
+      Default location of center of gravity relative to wing leading
+      edge, expressed as a fraction of aerodynamic chord length.
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingChord" varID="cbar" units="f" initialValue="3.0">
+    <description> Length of aerodynamic chord, m </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingSpan" varID="bspan" units="f" initialValue="2.0">
+    <description> Length of aerodynamic span, m </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <!-- ================== -->
+  <!--  Output variables  -->
+  <!-- ================== -->
+
+  <variableDef name="aeroXBodyForceCoefficient" varID="cx" units="" sign="FWD" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body X-axis.
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroYBodyForceCoefficient" varID="cy" units="" sign="RIGHT" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body Y-axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroZBodyForceCoefficient" varID="cz" units="" sign="DOWN" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body Z-axis.
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroRollBodyMomentCoefficient" varID="cl" units="" sign="RWD" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body X-axis (rolling
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroPitchBodyMomentCoefficient" varID="cm" units="" sign="ANU" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body Y-axis (pitching
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroYawBodyMomentCoefficient" varID="cn" units="" sign="ANR" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body Z-axis (yawing
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <checkData>
+    <staticShot name="Nominal">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <signalUnits>d</signalUnits>
+          <signalValue> 5.000</signalValue>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <signalUnits>d</signalUnits>
+          <signalValue> 0.000</signalValue>
+        </signal>
+      </checkInputs>
+
+      <internalValues>
+	<signal> <varID>cbar</varID> <signalValue>3.0</signalValue> </signal>
+	<signal> <varID>bspan</varID> <signalValue>2.0</signalValue> </signal>
+      </internalValues>
+
+      <checkOutputs>
+        <signal>
+          <signalName>aeroXBodyForceCoefficient</signalName>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroYBodyForceCoefficient</signalName>
+          <signalUnits/>
+          <signalValue> 0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroZBodyForceCoefficient</signalName>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroRollBodyMomentCoefficient</signalName>
+          <signalUnits/>
+          <signalValue> 0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroPitchBodyMomentCoefficient</signalName>
+          <signalUnits/>
+          <signalValue>-0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroYawBodyMomentCoefficient</signalName>
+          <signalUnits/>
+          <signalValue> 0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+  </checkData>
+
+
+</DAVEfunc>

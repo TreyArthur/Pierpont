@@ -1,0 +1,55 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 1.9//EN" "DAVEfunc.dtd">
+<DAVEfunc>
+  <fileHeader>
+    <author name="Bruce Jackson" org="NASA Langley Research Center" email="e.b.jackson@nasa.gov"/>
+    <creationDate date="2002-03-11"/>
+
+    <fileVersion>$Revision: 109 $</fileVersion>
+
+    <description>
+	Coefficient of lift (non-dimensional) versus angle-of-attack, deg.
+	Example file for DAVE function table format. This example is the simplest version.
+    </description>
+    <modificationRecord modID="A" date="2002-03-11">
+      <author name="Bruce Jackson" org="NASA Langley Research Center" email="e.b.jackson@nasa.gov"/>
+      <description>
+	  Added varID to dependentVarPts and independentVarPts, per DTD 1.5b2 change. Also changed 
+	  author's xns address to e-mail address.
+      </description>
+    </modificationRecord>
+    <modificationRecord modID="B" date="2006-11-17">
+      <author name="Bruce Jackson" org="NASA Langley Research Center" email="e.b.jackson@nasa.gov"/>
+      <description>
+        Added date to modificationRecord per DTD 1.9 change.
+      </description>
+    </modificationRecord>
+    <modificationRecord modID="C" date="2009-04-21">
+      <author name="Trey Arthur" org="NASA Langley Research Center" email="Trey.Arthur@nasa.gov"/>
+      <description>
+        Added standard AIAA simulation variable name angle of attack.
+      </description>
+    </modificationRecord>
+  </fileHeader>
+
+  <variableDef name="angleOfAttack_d" varID="alpdeg" units="deg">
+   <isStdAIAA/>
+  </variableDef>
+  <variableDef name="CL" varID="cl" units=""/>
+  <breakpointDef name="Mach" bpID="XMACH1_PTS" units="">
+    <description>
+        Mach number breakpoints for all aero data tables
+    </description>
+    <bpVals>
+        0.3, 0.6, 0.8, 0.9, 0.95, 1.1, 1.2, 1.6, 2.0, 2.5, 3.0, 3.5, 4.0
+    </bpVals>
+  </breakpointDef>
+  <function name="CL">
+    <independentVarPts varID="alpdeg">
+	  -4.0, 0., 4.0, 8.0, 12.0, 16.0
+    </independentVarPts>
+    <dependentVarPts varID="cl">
+	  0.0, 0.2, 0.4, 0.8, 1.0, 1.2
+    </dependentVarPts>
+  </function>
+</DAVEfunc>

@@ -1,0 +1,34 @@
+<?xml version="1.0" standalone="no"?>
+
+<!-- Canon ball is 25kg with a radius of 10cm -->
+
+<initialConditions>
+
+ <ic name="Orbit">
+  <data name="grossWeight" units="N">245.0</data>
+
+  <data name="bodyXXMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyYYMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyZZMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyXYMomentOfInertia" units="kgm2">0.0</data>
+  <data name="bodyXZMomentOfInertia" units="kgm2">0.0</data>
+  <data name="bodyYZMomentOfInertia" units="kgm2">0.0</data>
+
+  <data name="latitude" units="rad">0.0</data>
+  <data name="longitude" units="rad">0.0</data>
+  <data name="altitude" units="km">200.0</data>
+  <data name="referenceWingArea" units="m2">0.031415</data>
+
+  <data name="trueAirspeed" units="km_s">8.0</data>
+  <data name="angleOfAttack" units="rad">0.0</data>
+  <data name="angleOfSideslip" units="rad">0.0</data>
+  <data name="rollEulerAngle" units="rad">0.0</data>
+  <data name="pitchEulerAngle" units="rad">0.0</data>
+  <data name="yawEulerAngle" units="deg">90.0</data>
+  <data name="rollBodyRate" units="rad_s">0.0</data>
+  <data name="pitchBodyRate" units="rad_s">0.0</data>
+  <data name="yawBodyRate" units="rad_s">0.0</data>
+  <data name="XBodyPositionOfCG" units="nd">0.25</data>
+ </ic>
+
+</initialConditions>

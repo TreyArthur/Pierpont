@@ -1,0 +1,115 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
+<!-- $Revision: 1 $ -->
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+  <fileHeader name="Cannon Ball Aerodynamics Model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov"/>
+    <creationDate date="2010-02-01"/>
+    <fileVersion>$Revision: 1 $</fileVersion>         
+    <description>
+      Simple sphere aerodynmaic model
+    </description>
+
+  </fileHeader>
+
+  <!-- ================== -->
+  <!--      Constants     -->
+  <!-- ================== -->
+
+  <variableDef name="XBodyPositionOfMRC" varID="xcgr" units="nd" initialValue="0.1">
+    <description> 
+      Default location of center of gravity relative to wing leading
+      edge, expressed as a fraction of aerodynamic chord length.
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingChord" varID="cbar" units="m" initialValue="0.2">
+    <description> Length of aerodynamic chord, m </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingSpan" varID="bspan" units="m" initialValue="0.2">
+    <description> Length of aerodynamic span, m </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingArea" varID="swing" units="m2" initialValue="0.0314159">
+    <description> Wing area, m2 </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <!-- ================== -->
+  <!--  Output variables  -->
+  <!-- ================== -->
+
+  <variableDef name="aeroBodyForceCoefficient_X" varID="cx" units="nd" sign="FWD" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body X-axis.
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Y" varID="cy" units="nd" sign="RIGHT" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body Y-axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Z" varID="cz" units="nd" sign="DOWN" initialValue="0.0">
+    <description> 
+      Total coefficient of force along the body Z-axis.
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Roll" varID="cl" units="nd" sign="RWD" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body X-axis (rolling
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Pitch" varID="cm" units="nd" sign="ANU" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body Y-axis (pitching
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Yaw" varID="cn" units="nd" sign="ANR" initialValue="0.0">
+    <description> 
+      Total coefficient of moment around the body Z-axis (yawing
+      moment)
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <checkData>
+    <staticShot name="Internal Constants">
+      <internalValues>
+	      <signal> 
+          <signalName>Wind Chord</signalName>
+          <varID>cbar</varID> 
+          <signalValue>0.2</signalValue> 
+        </signal>
+	      <signal> 
+          <signalName>Wind Span</signalName>
+          <varID>bspan</varID> 
+          <signalValue>0.2</signalValue> 
+        </signal>
+      </internalValues>
+    </staticShot>
+  </checkData>
+
+
+</DAVEfunc>

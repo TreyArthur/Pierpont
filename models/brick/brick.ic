@@ -1,0 +1,58 @@
+<?xml version="1.0" standalone="no"?>
+
+<initialConditions>
+
+ <ic name="Fire 400 fps">
+  <data name="grossWeight" units="lbf">50.0</data>
+
+  <data name="bodyXXMomentOfInertia" units="slugft2">0.08</data>
+  <data name="bodyYYMomentOfInertia" units="slugft2">0.17</data>
+  <data name="bodyZZMomentOfInertia" units="slugft2">0.22</data>
+  <data name="bodyXYMomentOfInertia" units="slugft2">0.0</data>
+  <data name="bodyXZMomentOfInertia" units="slugft2">0.0</data>
+  <data name="bodyYZMomentOfInertia" units="slugft2">0.0</data>
+
+  <data name="latitude" units="deg">37.0</data>
+  <data name="longitude" units="deg">-76.0</data>
+  <data name="altitude" units="ft">10.0</data>
+  <data name="referenceWingArea" units="ft2">6.0</data>
+
+  <data name="trueAirspeed" units="ft_s">424.264</data>
+  <data name="angleOfAttack" units="deg">-45.0</data>
+  <data name="angleOfSideslip" units="deg">0.0</data>
+  <data name="rollEulerAngle" units="deg">60.0</data>
+  <data name="pitchEulerAngle" units="deg">45.0</data>
+  <data name="yawEulerAngle" units="deg">90.0</data>
+  <data name="rollBodyRate" units="rad_s">0.174533</data>
+  <data name="pitchBodyRate" units="rad_s">0.122173</data>
+  <data name="yawBodyRate" units="rad_s">0.034907</data>
+  <data name="XBodyPositionOfCG" units="nd">0.0</data>
+ </ic>
+
+ <ic name="Tumbling Brick - Atmos-03-sim-01">
+  <data name="bodyXXMomentOfInertia" units="slugft2">0.001894220</data>
+  <data name="bodyYYMomentOfInertia" units="slugft2">0.006211019</data>
+  <data name="bodyZZMomentOfInertia" units="slugft2">0.007194665</data>
+  <data name="bodyXYMomentOfInertia" units="slugft2">0.0</data>
+  <data name="bodyXZMomentOfInertia" units="slugft2">0.0</data>
+  <data name="bodyYZMomentOfInertia" units="slugft2">0.0</data>
+
+  <data name="latitude" units="deg">0.0</data>
+  <data name="longitude" units="deg">0.0</data>
+  <data name="altitude" units="ft">30000.0</data>
+
+  <data name="rollEulerAngle" units="rad">0.0</data>
+  <data name="pitchEulerAngle" units="rad">0.0</data>
+  <data name="yawEulerAngle" units="rad">0.0</data>
+  <data name="rollBodyRate" units="deg_s">10.0</data>
+  <data name="pitchBodyRate" units="deg_s">20.0</data>
+  <data name="yawBodyRate" units="deg_s">30.0</data>
+
+  <data name="trueAirspeed" units="ft_s">0.0</data>
+  <data name="angleOfAttack" units="rad">0.0</data>
+  <data name="angleOfSideslip" units="rad">0.0</data>
+
+  <data name="grossWeight" units="lbf">5.0</data>
+ </ic>
+
+</initialConditions>

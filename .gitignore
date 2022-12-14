@@ -1,0 +1,5 @@
+.ipynb_checkpoints
+.DS_Store
+pierpont/__pycache__
+pierpont/.ipynb_checkpoints
+pierpont/.DS_Store

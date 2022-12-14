@@ -1,0 +1,32 @@
+<?xml version="1.0" standalone="no"?>
+
+<initialConditions>
+
+ <ic name="Fire 300 m/s">
+  <data name="grossWeight" units="N">245.0</data>
+
+  <data name="bodyXXMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyYYMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyZZMomentOfInertia" units="kgm2">0.1</data>
+  <data name="bodyXYMomentOfInertia" units="kgm2">0.0</data>
+  <data name="bodyXZMomentOfInertia" units="kgm2">0.0</data>
+  <data name="bodyYZMomentOfInertia" units="kgm2">0.0</data>
+
+  <data name="latitude" units="d">37.26765</data>
+  <data name="longitude" units="d">-76.753906</data>
+  <data name="altitude" units="m">10.0</data>
+  <data name="referenceWingArea" units="m2">0.031415</data>
+
+  <data name="trueAirspeed" units="ms-1">424.2641</data>
+  <data name="angleOfAttack" units="d">-45.0</data>
+  <data name="angleOfSideslip" units="d">0.0</data>
+  <data name="rollEulerAngle" units="d">0.0</data>
+  <data name="pitchEulerAngle" units="d">0.0</data>
+  <data name="yawEulerAngle" units="d">0.0</data>
+  <data name="rollBodyRate" units="rs-1">0.0</data>
+  <data name="pitchBodyRate" units="rs-1">0.0</data>
+  <data name="yawBodyRate" units="rs-1">0.0</data>
+  <data name="XBodyPositionOfCG" units="fracMAC">0.25</data>
+ </ic>
+
+</initialConditions>

@@ -1,0 +1,429 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
+<!-- $Revision: 132 $ -->
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+  <fileHeader name="Test File">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="Trey.Arthur@nasa.gov"/>
+    <creationDate date="2009-06-01"/>
+    <fileVersion>$Revision: 1 $</fileVersion>
+    <description>A test for the Pierpont parser </description>
+  </fileHeader>
+
+  <!-- ================== -->
+  <!--      Constants     -->
+  <!-- ================== -->
+
+  <variableDef name="rtd" varID="rtd" units="deg_rad" initialValue="57.29577951">
+    <description> Conversion constant from radians to degrees </description>
+  </variableDef>
+
+  <variableDef name="angleOfAttack" varID="alpha" units="nd">
+  </variableDef>
+
+  <variableDef name="beta" varID="beta" units="deg" initialValue="5.0">
+  </variableDef>
+
+  <variableDef name="Avariable" varID="a" units="nd" initialValue="2.0">
+  </variableDef>
+
+  <variableDef name="Bvariable" varID="b" units="nd">
+  </variableDef>
+
+  <variableDef name="cnp" varID="cnp" units="nd">
+  </variableDef>
+
+  <variableDef name="dtr" varID="dtr" units="r_d">
+    <description> Conversion constant from degrees to radians </description>
+    <calculation>
+      <python>3.14159265/180.0</python>
+      <math>
+        <apply>
+          <divide/>
+          <cn>3.14159265</cn>
+          <cn>180.</cn>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+
+  <!-- ================== -->
+  <!--  Local variables   -->
+  <!-- ================== -->
+
+<!-- Alpha in radians, for checkcases (mod D) -->
+  <variableDef name="alpr" varID="ALPR" units="rad">
+    <description>Angle of attack in radians</description>
+    <calculation>
+      <python>{alpha} * {dtr}</python>
+      <math>
+        <apply>
+          <times/>
+          <ci>alpha</ci>
+          <ci>dtr</ci>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="dummy" varID="dummy" units="nd">
+    <description> A test: TREY </description>
+    <calculation>
+      <python>10 * (25 - 15) + 8/2 + 9 * 9 + 3 + 2</python>
+      <math>
+        <apply>
+          <plus/>
+
+              <cn>2</cn>
+              <cn>3</cn>
+
+              <apply>
+                 <divide/>
+                  <cn>8</cn>
+                  <cn>2</cn>
+              </apply>
+
+              <apply>
+                <times/>
+                  <cn>9</cn>
+                  <cn>9</cn>
+              </apply>
+              <apply>
+               <times/>
+
+                <apply>
+                 <minus/>
+                  <cn>25</cn>
+                  <cn>15</cn>
+                </apply>
+
+                <cn>10</cn>
+            </apply>
+
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="Xvar" varID="x" units="nd">
+    <description> A test: TREY </description>
+    <calculation>
+      <python>5.0 ** {a}</python>
+      <math>
+        <apply>
+          <power/>
+           <cn>5.0</cn>
+           <ci>a</ci>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="y" varID="y" units="nd">
+    <description> A test: TREY </description>
+    <calculation>
+      <python>{cnp} + 0.0</python>
+      <math>
+        <apply>
+          <plus/>
+           <cn>0.0</cn>
+           <ci>cnp</ci>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="Cz1" varID="cz1" units="nd" sign="down">
+    <description>
+      Coefficient of force in the Z-body direction, modified from
+      basic CZ0 to include effects of sideslip and elevator
+      deflection.
+    </description>
+    <calculation>
+      <python>{czt}*(1.-({beta}/{rtd})**2)-0.19*{del}</python>
+      <math>                         <!-- cz = czt*(1.-(beta/rtd)^2)-0.19*del   -->
+        <apply>                      <!--      czt*(1.-(beta/rtd)^2)-0.19*del   -->
+          <plus/>
+          <apply>                    <!--      czt*(1.-(beta/rtd)^2)            -->
+            <times/>
+            <cn>3.0</cn>
+            <apply>                  <!--          (1-(beta/rtd)^2)             -->
+              <plus/>
+              <cn>1.</cn>
+              <apply>                <!--            -(beta/rtd)^2              -->
+                <minus/>
+                <apply>              <!--             (beta/rtd)^2              -->
+                  <power/>
+                  <apply>            <!--              beta/rtd                 -->
+                    <divide/>
+                    <cn>4</cn>
+                    <cn>2</cn>
+                  </apply>           <!--              beta/rtd                 -->
+                  <cn>2</cn>
+                </apply>             <!--             (beta/rtd)^2              -->
+              </apply>               <!--            -(beta/rtd)^2              -->
+            </apply>                 <!--          (1-(beta/rtd)^2)             -->
+          </apply>                   <!--      czt*(1.-(beta/rtd)^2)            -->
+          <apply>                    <!--                           -0.19*del   -->
+            <times/>
+            <ci>b</ci>
+            <cn>16.2</cn>
+          </apply>                   <!--                           -0.19*del   -->
+        </apply>                     <!--      czt*(1.-(beta/rtd)^2)-0.19*del   -->
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="cnt" varID="cnt" units="nd" sign="nose right">
+    <description> Basic coefficient of moment around the Z-body direction (yaw) (+RWD) </description>
+    <calculation>
+      <python>-10 if {beta} &lt; 0 else 10</python>
+      <!--<python>20</python>-->
+      <math>
+        <apply>
+          <piecewise>
+            <piece>
+              <apply>
+                <minus/>
+                <cn>10</cn>
+              </apply>
+              <apply>
+                <lt/>
+                <ci>beta</ci>
+                <cn>0</cn>
+              </apply>
+            </piece>
+            <otherwise>
+              <cn>10</cn>
+            </otherwise>
+          </piecewise>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="ALP_UNLIM" varID="ALP_UNLIM" units="deg">
+  </variableDef>
+
+  <variableDef name="ALP_MAX_LIM" varID="ALP_MAX_LIM" units="deg" initialValue="5.0">
+  </variableDef>
+
+<!-- LIMITED ALPHA -->
+  <variableDef name="Limited_angle_of_attack" varID="ALP" units="deg" sign="anu">
+    <description>
+        Instantaneous angle of attack, limited as a function of Mach
+        number, degrees.
+
+        If unlimited alpha (ALP_UNLIM) is less than -2, output -2 (lower
+        alpha limit at all Mach).  If unlimited alpha is greater than
+        ALP_MAX_LIM, a function of Mach, output ALP_MAX_LIM. Otherwise,
+        output current value of ALP_UNLIM.
+    </description>
+    <calculation>
+      <python>-2.0 if {ALP_UNLIM} &lt; -2 else {ALP_MAX_LIM} if {ALP_UNLIM} > {ALP_MAX_LIM} else {ALP_UNLIM}</python>
+      <math>
+        <apply>
+          <piecewise>
+            <piece>
+              <cn>-2</cn>
+              <apply><lt/><ci>ALP_UNLIM</ci><cn>-2</cn></apply>
+            </piece>
+
+            <otherwise>
+              <apply>
+                <piecewise>
+                  <piece>
+                    <ci>ALP_MAX_LIM</ci>
+                    <apply><gt/><ci>ALP_UNLIM</ci><ci>ALP_MAX_LIM</ci></apply>
+                  </piece>
+                  <otherwise>
+                    <ci>ALP_UNLIM</ci>
+                  </otherwise>
+                </piecewise>
+              </apply>
+            </otherwise>
+
+          </piecewise>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="sinTest" varID="sinTest" units="nd" sign="none">
+    <description> Test the sin function: sin(45 deg)  </description>
+    <calculation>
+      <python>math.sin(0.5235987756)</python>
+      <math>
+        <apply>
+            <sin/>
+            <cn>0.5235987756</cn>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--  Breakpoint values -->
+  <!-- ================== -->
+
+  <breakpointDef name="alpha" bpID="ALPHA1" units="deg">
+    <description> Alpha breakpoints for basic and damping aero tables </description>
+    <bpVals> -10., -5., 0., 5., 10., 15., 20., 25., 30., 35., 40., 45. </bpVals>
+  </breakpointDef>
+
+  <function name="Cnp">
+    <description>
+      Damping derivative: yawing moment due to roll rate as a function
+      of angle-of-attack
+    </description>
+    <provenance>
+      <author name="Bruce Jackson" org="NASA Langley Research Center"
+              email="bruce.jackson@nasa.gov"/>
+      <creationDate date="2002-04-04"/>
+      <documentRef refID="REF01"/>
+      <documentRef refID="REF02"/>
+      <documentRef refID="REF03"/>
+    </provenance>
+    <independentVarRef varID="alpha" min="-10.0" max="45.0" extrapolate="neither"/>
+    <!-- Alpha breakpoints -->
+    <dependentVarRef varID="cnp"/>
+
+    <functionDefn name="Cnp_fn">
+      <griddedTable name="Cnp_table">
+        <breakpointRefs>
+          <bpRef bpID="ALPHA1"/>
+        </breakpointRefs>
+        <dataTable> .061, .052, .052, -.012, -.013, -.024, .050, .150, .130, .158, .240,
+        .150 </dataTable>
+      </griddedTable>
+    </functionDefn>
+  </function>
+
+  <checkData>
+    <staticShot name="Nominal">
+      <checkInputs>
+        <signal>
+          <signalName>Bvariable</signalName>
+          <varID>b</varID>
+          <signalValue>-2.5</signalValue>
+        </signal>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha</varID>
+          <signalValue>5.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>ALP_UNLIM</signalName>
+          <varID>ALP_UNLIM</varID>
+          <signalValue>-1.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta</varID>
+          <signalValue>5.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>del</varID>
+          <signalUnits>d</signalUnits>
+          <signalValue> 0.000</signalValue>
+        </signal>
+        <signal>
+          <signalName>czt</signalName>
+          <varID>czt</varID>
+          <signalUnits>d</signalUnits>
+          <signalValue>-49.5</signalValue>
+        </signal>
+      </checkInputs>
+
+      <internalValues>
+        <signal>
+          <signalName>Radian to degree</signalName>
+          <varID>rtd</varID>
+          <signalValue>57.29577951</signalValue>
+        </signal>
+        <signal>
+          <signalName>Degree to radian</signalName>
+          <varID>dtr</varID>
+          <signalValue>0.01745329252</signalValue>
+        </signal>
+        <signal>
+          <signalName>a</signalName>
+          <varID>a</varID>
+          <signalValue>2.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>b</signalName>
+          <varID>b</varID>
+          <signalValue>-2.5</signalValue>
+        </signal>
+        <signal>
+          <signalName>beta</signalName>
+          <varID>beta</varID>
+          <signalValue>5</signalValue>
+        </signal>
+        <signal>
+          <signalName>ALP_UNLIM</signalName>
+          <varID>ALP_UNLIM</varID>
+          <signalValue>-1.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>sinTest</signalName>
+          <varID>sinTest</varID>
+          <signalValue>0.5</signalValue>
+        </signal>
+        <signal>
+          <signalName>ALPR</signalName>
+          <varID>ALPR</varID>
+          <signalValue>0.0872665</signalValue>
+        </signal>
+      </internalValues>
+
+      <checkOutputs>
+        <signal>
+          <signalName>dummy</signalName>
+          <varID>dummy</varID>
+          <signalValue>190.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>Xvar</signalName>
+          <varID>x</varID>
+          <signalValue>25.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>cz1</signalName>
+          <varID>cz1</varID>
+          <signalValue>-49.123036</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>y</signalName>
+          <varID>y</varID>
+          <signalValue>-0.012</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>cnt</signalName>
+          <varID>cnt</varID>
+          <signalValue>10</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>Limited_angle_of_attack</signalName>
+          <varID>ALP</varID>
+          <signalValue>-1.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>Cnp</signalName>
+          <varID>cnp</varID>
+          <signalValue>-0.012</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+  </checkData>
+
+</DAVEfunc>

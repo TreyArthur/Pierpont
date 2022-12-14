@@ -1,0 +1,113 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN"  
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <!--                          =================                          -->
+  <!-- =========================   FILE HEADER   ========================= -->
+  <!--                          =================                          -->
+
+
+  <fileHeader name="Zero Aero Output">
+
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>Hampton, VA</address>
+    </author>
+
+    <creationDate date="2021-07-21"/>
+
+    <fileVersion>Mod A, 2022-12-06</fileVersion>
+
+    <description>
+      A simple constant zero output model
+    </description>
+    
+    <modificationRecord modID="A" date="2022-12-06">
+      <author name="Trey Arthur" org="NASA Langley Research Center"
+              email="trey.arthur@nasa.gov"/>
+      <description>
+    Added reference area, chord and span.
+      </description>
+    </modificationRecord>
+
+  </fileHeader>
+
+
+  <!--                          ==========================                          -->
+  <!-- =========================   VARIABLE DEFINITIONS   ========================= -->
+  <!--                          ==========================                          -->
+
+  <!-- ================== -->
+  <!--     Constants      -->
+  <!-- ================== -->
+
+  <variableDef name="referenceWingArea" varID="SWING" units="ft2" initialValue="0.1963495">
+    <description>Reference area of sphere</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingSpan" varID="BSPAN" units="ft" initialValue="0.2">
+    <description>diameter of sphere</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingChord" varID="CBAR" units="ft" initialValue="0.2">
+    <description>diameter of sphere</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--       Outputs      -->
+  <!-- ================== -->
+
+
+  <variableDef name="aeroBodyForceCoefficient_X" varID="CX" units="kgm2" initialValue="0.0">
+    <description>
+      Force coefficient along the body X axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Y" varID="CY" units="kgm2" initialValue="0.0">
+    <description>
+      Force coefficient along the body Y axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Z" varID="CZ" units="kgm2" initialValue="0.0">
+    <description>
+      Force coefficient along the body Z axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+  
+
+  <variableDef name="aeroBodyMomentCoefficient_Roll" varID="CLL" units="kgm2" initialValue="0.0">
+    <description>
+      Moment coefficient about the body X axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Pitch" varID="CLM" units="kgm2" initialValue="0.0">
+    <description>
+      Moment coefficient about the body Y axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Yaw" varID="CLN" units="kgm2" initialValue="0.0">
+    <description>
+      Moment coefficient about the body Z axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+  
+</DAVEfunc>
