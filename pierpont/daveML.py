@@ -66,6 +66,10 @@ class Model:
             self.bpRef.clear()
             self.dataTable.clear()
             
+    class ppUngriddedTableDef:
+        utID = None
+        name = None
+            
     class ppFunction:
         name = None
         fdName = None
@@ -188,9 +192,9 @@ class Model:
         print("+++++ MODEL INPUTS AND OUTPUTS +++++")
         for v in self.VarDef:
             if v.isInput:
-                print("++> Input: ", v.varID)
+                print("++> Input: ", v.name)
             if v.isOutput:
-                print("++> Output: ", v.varID)
+                print("++> Output: ", v.name)
         print("++++++++++++++++++++++++++++++++++++")
         
         # connect the gridded tables with break points to functions

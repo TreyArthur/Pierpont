@@ -1,0 +1,199 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc 
+      PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN" 
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="Example cannonball aerodynamic model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MS 152 NASA, Hampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2022-12-31"/>
+
+    <fileVersion>Inital Version</fileVersion>
+
+    <description>
+      A simple constant drag model for a 1-slug, 6" diameter cannonball
+    </description>
+  </fileHeader>
+
+
+  <variableDef name="totalMass" varID="totalMass" units="slug" initialValue="1.0">
+    <description>Mass of the sphere</description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="slugft2" initialValue="3.6">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="slugft2" initialValue="3.6">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="slugft2" initialValue="3.6">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingArea" varID="SWING" units="ft2" initialValue="0.1963495">
+    <description>Reference area of cannonball (assumed radius is 3")</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="totalCoefficientOfDrag" varID="CD" units="nd" initialValue="0.1">
+    <description> Coefficient of Drag </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <!-- ================== -->
+  <!--       Inputs       -->
+  <!-- ================== -->
+  
+  <variableDef name="angleOfAttack" varID="alpha" units="rad">
+    <description> Instantaneous true angle-of-attack, in radians </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <!-- ================== -->
+  <!--       Outputs      -->
+  <!-- ================== -->
+
+  <variableDef name="aeroBodyForceCoefficient_X" varID="CX" units="nd" initialValue="0.0">
+    <description>
+      Force coefficient along the body X axis
+    </description>
+    <calculation>
+      <python>-{CD}*math.cos({alpha})</python>
+      <math>
+        <apply>
+          <times />
+          <apply>
+          <times />
+            <cn>-1</cn>
+            <ci>CD</ci>
+          </apply>
+            <ci>cos</ci>
+            <ci>alpha</ci>
+          </apply>
+      </math>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Y" varID="CY" units="nd" initialValue="0.0">
+    <description>
+      Force coefficient along the body Y axis
+    </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Z" varID="CZ" units="nd" initialValue="0.0">
+    <description>
+      Force coefficient along the body Z axis
+    </description>
+    <calculation>
+      <python>-{CD}*math.sin({alpha})</python>
+      <math>
+        <apply>
+          <times />
+          <apply>
+          <times />
+            <cn>-1</cn>
+            <ci>CD</ci>
+          </apply>
+            <ci>sin</ci>
+            <ci>alpha</ci>
+          </apply>
+      </math>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <!-- ================== -->
+  <!--       Checks       -->
+  <!-- ================== -->
+  
+  <checkData>
+    <staticShot name="AoA of 10 deg">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha</varID>
+          <signalUnits>rad</signalUnits>
+          <signalValue>0.174533</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>CX</varID>
+          <signalUnits/>
+          <signalValue>-0.098481</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>CY</varID>
+          <signalUnits/>
+          <signalValue> 0.00000000000000</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>CZ</varID>
+          <signalUnits/>
+          <signalValue>-0.017365</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="AoA of 45 deg">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha</varID>
+          <signalUnits>rad</signalUnits>
+          <signalValue>0.785398</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>CX</varID>
+          <signalUnits/>
+          <signalValue>-0.070711</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>CY</varID>
+          <signalUnits/>
+          <signalValue> 0.00000000000000</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>CZ</varID>
+          <signalUnits/>
+          <signalValue>-0.070711</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+  </checkData>
+  
+</DAVEfunc>

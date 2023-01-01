@@ -1,0 +1,58 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc 
+      PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN" 
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="Example cannonball aerodynamic model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MS 152 NASA, Hampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2022-12-28"/>
+
+    <fileVersion>Inital Version</fileVersion>
+
+    <description>
+      A simple constant drag model for a 1-slug, 6" diameter cannonball
+    </description>
+  </fileHeader>
+
+
+  <variableDef name="totalMass" varID="totalMass" units="slug" initialValue="1.0">
+    <description>Mass of the sphere</description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="slugft2" initialValue="3.6">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="slugft2" initialValue="3.6">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="slugft2" initialValue="3.6">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingArea" varID="SWING" units="ft2" initialValue="0.1963495">
+    <description>Reference area of cannonball (assumed radius is 3")</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="totalCoefficientOfDrag" varID="CD" units="nd" initialValue="0.1">
+    <description> Coefficient of Drag </description>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+</DAVEfunc>

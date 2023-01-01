@@ -1,0 +1,49 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN"  
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="Brick Model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MS 152 NASA, Hampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2022-12-28"/>
+
+    <fileVersion>Initial version</fileVersion>
+
+    <description>
+      A simple, made-up constant mass matrix for a US face brick (8" x 4" x 2.25") for use in the
+      2012 NASA NESC EOM verification data project.
+    </description>
+  </fileHeader>
+
+  <variableDef name="totalMass" varID="XMASS" units="slug" initialValue="0.155404754">
+    <description>
+      Total mass of brick (5 lbm)
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="slugft2" initialValue="0.00189422">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="slugft2" initialValue="0.006211019">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="slugft2" initialValue="0.007194665">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+</DAVEfunc>
