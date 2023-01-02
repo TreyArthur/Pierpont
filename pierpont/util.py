@@ -19,6 +19,7 @@ def MinDeltaAngleDeg(angle1, angle2):
 ###############################################################################
 
 def GetDataNorms(data, checkData, isAng):
+    """Calculates the L2 and L-infinity norms from two data sets. """
     l2Sum = 0
     manSum = 0
     infNorm = 0
@@ -36,26 +37,34 @@ def GetDataNorms(data, checkData, isAng):
 
 ###############################################################################
 
-def Frechet(p, q):
-    lenP = len(p)
-    lenQ = len(q)
-    #print("len p: ", lenP)
-    #print("len q: ", lenQ)
+def Frechet(px, py, qx, qy):
+    """Computes the Fechet distance.
+    
+    Frechet distance can be used to compare two curves.  This measure is 
+    useful if the time steps differ between two plots.  If the two curves have
+    the same x values (i.e., same time step), you can just use the L-infinity
+    norm.
+    
+    This is a recursive algorithm from:
+    Eiter, T. and Mannila, H., 1994. Computing discrete Fréchet distance. Tech. 
+    Report CD-TR 94/64, Information Systems Department, Technical 
+    University of Vienna.
+    
+    (It creates a large matrix.  Seems like it could be more efficient.)
+    """
+    lenP = len(px)
+    lenQ = len(qx)
     
     ca = []
-    for i in p:
+    for i in px:
         row = []
-        for j in q:
+        for j in qx:
             row.append( 0.0 )
         ca.append( row )
     
     for i in range(lenP):
         for j in range(lenQ):
-            p1 = p[i]
-            q1 = q[j]
-
-            d = math.sqrt((p1[0]-q1[0])**2 + (p1[1]-q1[1])**2)
-            #print("d: ", d)
+            d = math.sqrt((px[i]-qx[i])**2 + (py[i]-qy[i])**2)
 
             if i > 0 and j > 0:
                 ca[i][j] = max(min(ca[i - 1][j],
@@ -72,6 +81,7 @@ def Frechet(p, q):
 ###############################################################################
 
 def CheckFrechet():
+    """Check out the Frechet distance with known data. """
     tPass = 0
     tFail = 0
     def Test(a, b, tp, tf):
@@ -83,19 +93,25 @@ def CheckFrechet():
             tfr = tf + 1
         return tpr, tfr
             
-    p = [[0.0, 0.0], [1.0, 0.0], [2.0, 0.0], [3.0, 0.0], [4.0, 0.0]]
-    q = [[0.0, 1.0], [1.0, 1.1], [2.0, 1.2], [3.0, 1.1], [4.0, 1.0]]
-    fd = Frechet(p, q)
+    px = [0.0, 1.0, 2.0, 3.0, 4.0]
+    py = [0.0, 0.0, 0.0, 0.0, 0.0]
+    qx = [0.0, 1.0, 2.0, 3.0, 4.0]
+    qy = [1.0, 1.1, 1.2, 1.1, 1.0]
+    fd = Frechet(px, py, qx, qy)
     tPass, tFail = Test(1.2, fd, tPass, tFail) 
 
-    p = [[1,1],[2,1],[2,2]]
-    q = [[1,1],[2,1],[2,2]]
-    fd = Frechet(p, q)
+    px = [1.0, 2.0, 2.0]
+    py = [1.0, 2.0, 2.0]
+    qx = [1.0, 2.0, 2.0]
+    qy = [1.0, 2.0, 2.0]
+    fd = Frechet(px, py, qx, qy)
     tPass, tFail = Test(0.0, fd, tPass, tFail)
 
-    p=[[1,1], [2,1], [2,2]]
-    q=[[2,2], [0,1], [2,4]]
-    fd = Frechet(p, q)
+    px = [1.0, 2.0, 2.0]
+    py = [1.0, 1.0, 2.0]
+    qx = [2.0, 0.0, 2.0]
+    qy = [2.0, 1.0, 4.0]
+    fd = Frechet(px, py, qx, qy)
     tPass, tFail = Test(2.0, fd, tPass, tFail)
     
     print("----> Frechet Test Results <----")
@@ -104,23 +120,8 @@ def CheckFrechet():
 
 ###############################################################################
 
-def PrintErrorTable(tableTitle, labels, simData, checkData):
-    print("====================")
-    print(tableTitle)
-    print ("{:<25} {:<7} {:<15}".format('Variable', 'L2', 'L-Infinity-Norm'))
-    print ("{:<25} {:<7} {:<15}".format('--------', '--', '---------------'))
-    barLinf = {}
-    for i in labels:
-        tmpDist = GetDataNorms(checkData[i], simData.ImperialData[i], i.find("_deg_"))
-        td0 = round(tmpDist[0], 3)
-        td1 = round(tmpDist[1], 3)
-        print ("{:<25} {:<7} {:<15}".format(i, td0, td1))
-        barLinf[i] = tmpDist[1]
-    return
-
-###############################################################################
-
 def GetNESCData(fileName):
+    """Loads NESC check data from .csv files."""
     # open the CSV file as read-only
     csvFile = open(fileName,'r')
     # strip the newline character from the header line
@@ -143,3 +144,21 @@ def GetNESCData(fileName):
     return Data
 
 ###############################################################################
+
+def PrintErrorTable(tableTitle, labels, simData, checkData):
+    """Print table comparing computed data to NESC check data."""
+    print("====================")
+    print(tableTitle)
+    print ("{:<25} {:<7} {:<7} {:<7}".format('Variable', 'L2', 'L-Inf','Frechet'))
+    print ("{:<25} {:<7} {:<7} {:<7}".format('--------', '--', '-----','--------'))
+    barLinf = {}
+    for i in labels:
+        tmpDist = GetDataNorms(checkData[i], simData.ImperialData[i], i.find("_deg_"))
+        td0 = round(tmpDist[0], 3)
+        td1 = round(tmpDist[1], 3)
+        #fd = Frechet(checkData['time'], checkData[i], 
+        #             simData.ImperialData['time'], simData.ImperialData[i])
+        #fd1 = round(tmpDist[1], 4)
+        print ("{:<25} {:<7} {:<7} {:<7}".format(i, td0, td1, "NC"))
+        barLinf[i] = tmpDist[1]
+    return

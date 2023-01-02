@@ -1486,6 +1486,7 @@ class Simulation(Convert):
             self.ImperialData[key] = []
         
         # TODO: extract units from name
+        self.ImperialData['time'] = self.time
         self.ImperialData['gePosition_ft_X'] = self.ToImperial(self.gePosition_m_X,"m")
         self.ImperialData['gePosition_ft_Y'] = self.ToImperial(self.gePosition_m_Y,"m")
         self.ImperialData['gePosition_ft_Z'] = self.ToImperial(self.gePosition_m_Z,"m")
