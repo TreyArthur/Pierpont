@@ -1338,15 +1338,64 @@ class Matrix3x3(UnitTest):
         self.TestValue(    -8, m5.A32, "Matrix * Scalar A32", 1e-7)
         self.TestValue(   -18, m5.A33, "Matrix * Scalar A33", 1e-7)
         
-        print("Number of Matrix3x3 failed tests: ", self.FailCount)
+        print("Number of Matrix3x3 failed tests: ", self.FailCount)  
         
+###############################################################################
+class ppIntegrator(UnitTest):
+    def AdamsBashforth(self, h, current, past):
+        k2 = [1.5, -0.5]
+        k3 = [23.0/12.0, -16.0/12.0, 5.0/12.0]
+        
+        x = h * (k2[0]*current.X + k2[1]*past.X)
+        y = h * (k2[0]*current.Y + k2[1]*past.Y)
+        z = h * (k2[0]*current.Z + k2[1]*past.Z)
+        
+        return [x, y, z]
+    
+    def RungeKutta4(self, h, Fdot, arg):
+        k1 = []
+        arg1 = []
+        for (a, f) in zip(arg, Fdot):
+            k = h*f(arg)
+            k1.append(k)
+            arg1.append(a + 0.5*k)
+        
+        k2 = []
+        arg2 = []
+        for (a, f) in zip(arg, Fdot):
+            k = h*f(arg1)
+            k2.append(k)
+            arg2.append(a + 0.5*k)
+    
+        k3 = []
+        arg3 = []
+        for (a, f) in zip(arg, Fdot):
+            k = h*f(arg2)
+            k3.append(k)
+            arg3.append(a + k)
+
+        k4 = []
+        for f in Fdot:
+            k4.append( h*f(arg3))
+
+        result = []
+        for (a, kc1, kc2, kc3, kc4) in zip(arg, k1, k2, k3, k4):
+            result.append(a + (kc1 + 2.0*kc2 + 2.0*kc3 + kc4) / 6.0)
+
+        return result
+    
+    def UnitTest(self):
+        # TODO: add integration checks
+        self.ClassName = "Integrator"
+        print("Number of Integrator failed tests: ", self.FailCount)
+    
 ###############################################################################
 class Simulation(Convert):
     def __init__(self, daveFile):
         self.DaveFile = daveFile
         
     Time = 0.0
-    TimeStep = 0.1
+    timeStep = 0.1
     Data = {}
     IC = {}
     
@@ -1360,7 +1409,6 @@ class Simulation(Convert):
     Position = Vector3(0, 0, 0)
     
     TotalMass = 0
-    GrossWeight = 0
     TrueAirspeed = 0
     BodyVelocity = Vector3(0, 0, 0)
     BodyAccel = Vector3(0, 0, 0)
@@ -1430,7 +1478,7 @@ class Simulation(Convert):
         
     def AdvanceTime(self):
         self.time.append(self.Time)
-        self.Time += self.TimeStep
+        self.Time += self.timeStep
         
     def AddAeroModelInput(self, input):
         self.AeroModelInput = input
@@ -1554,9 +1602,7 @@ class Simulation(Convert):
         #self.IC = ic.copy()
         print(self.IC)
         
-        #self.GrossWeight = self.SetValue("grossWeight", 1)
-        
-        self.TimeStep = self.SetValue("timeStep", 0.1)
+        self.timeStep = self.SetValue("timeStep", 0.1)
         
         self.TotalMass = self.SetValue("totalMass", 1)
         assert self.TotalMass != 0, "TotalMass is 0"
@@ -1629,50 +1675,6 @@ class Simulation(Convert):
         self.Mm = 0
         self.Mn = 0
     
-    def AdamsBashforth(self, current, past):
-        k2 = [1.5, -0.5]
-        k3 = [23.0/12.0, -16.0/12.0, 5.0/12.0]
-        
-        x = self.TimeStep * (k2[0]*current.X + k2[1]*past.X)
-        y = self.TimeStep * (k2[0]*current.Y + k2[1]*past.Y)
-        z = self.TimeStep * (k2[0]*current.Z + k2[1]*past.Z)
-        
-        return [x, y, z]
-    
-    def RungeKutta4(self, Fdot, arg):
-        h = self.TimeStep
-
-        k1 = []
-        arg1 = []
-        for (a, f) in zip(arg, Fdot):
-            k = h*f(arg)
-            k1.append(k)
-            arg1.append(a + 0.5*k)
-        
-        k2 = []
-        arg2 = []
-        for (a, f) in zip(arg, Fdot):
-            k = h*f(arg1)
-            k2.append(k)
-            arg2.append(a + 0.5*k)
-    
-        k3 = []
-        arg3 = []
-        for (a, f) in zip(arg, Fdot):
-            k = h*f(arg2)
-            k3.append(k)
-            arg3.append(a + k)
-
-        k4 = []
-        for f in Fdot:
-            k4.append( h*f(arg3))
-
-        result = []
-        for (a, kc1, kc2, kc3, kc4) in zip(arg, k1, k2, k3, k4):
-            result.append(a + (kc1 + 2.0*kc2 + 2.0*kc3 + kc4) / 6.0)
-
-        return result
-        
     def Reset(self, ic):
         pass
         
@@ -1680,7 +1682,7 @@ class Simulation(Convert):
         pass
     
     def Run(self, numberOfSeconds):
-        endTime = int(numberOfSeconds / self.TimeStep) + 1
+        endTime = int(numberOfSeconds / self.timeStep) + 1
         for i in range(endTime):
             self.Operate()
         print("======done=======")
@@ -1708,6 +1710,9 @@ class FlatEarth(Simulation):
     mass = 0
     
     Planet = Earth()
+    
+    # Integrator
+    Integrator = ppIntegrator()
     
     # state values
     X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1931,7 +1936,6 @@ class FlatEarth(Simulation):
         self.Zt = 0
         
     def Operate(self):
-        
         # save output data
         self.localGravity_m_s2.append(self.gD)
         self.altitudeMsl_m.append(self.X[self.Zi])
@@ -1941,7 +1945,7 @@ class FlatEarth(Simulation):
         self.trueAirspeed.append(self.TrueAirspeed)
         
         # integrate the equations
-        self.X = self.RungeKutta4(self.Xdot, self.X)
+        self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
         
         # Now advance time and update state equations
         self.AdvanceTime()
@@ -2010,6 +2014,8 @@ class slEarthSim(Simulation):
     Gx = 0
     Gy = 0
     Gz = 0
+    
+    Integrator = ppIntegrator()
     
     # state values: quaternion, position, acceleration and angular rates
     X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -2141,8 +2147,6 @@ class slEarthSim(Simulation):
         Vecf = Vector3(0,0,0)
         Vecf = self.Qe2b * self.BodyVelocity * ~self.Qe2b
         
-        #self.mass = self.GrossWeight / self.gD
-        
         self.Xdot.clear()
         self.Xdot = [self.QnDot, self.QxDot, self.QyDot, self.QzDot,
                      self.PxDot, self.PyDot, self.PzDot,
@@ -2226,7 +2230,7 @@ class slEarthSim(Simulation):
 
         
         # integrate the equations
-        self.X = self.RungeKutta4(self.Xdot, self.X) 
+        self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
         
         # advance time and set up for next integration
         self.AdvanceTime()

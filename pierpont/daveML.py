@@ -3,7 +3,7 @@ import math
 import logging
 
 class Model:
-    """A class hold the DAVE-ML aerodynamic data
+    """A class hold the DAVE-ML model data
     
     Attributes:
         Data : a key-value pair containing aero data. 
@@ -12,6 +12,7 @@ class Model:
         VarDef : contains all the variables defined in the DAVE model.
         BpDef : contains all of the breakpoints of the DAVE model.
         GtDef : all gridded tables in the DAVE model.
+        UgtDef : all ungridded tables in the DAVE model.
         FunctionDef : all functions defined by the DAVE model.
     """
     Data = {}
@@ -22,6 +23,7 @@ class Model:
     VarDef = []
     BpDef = []
     GtDef = []
+    UgtDef = []
     FunctionDef = []
     
     class ppVariableDef:
@@ -38,6 +40,9 @@ class Model:
         hasMath = False
         code = compile("1", "<string>", "eval")
         codeText = None
+        
+        hasFunction = False
+        functionDef = None
 
         isInput = True
         isOutput = False
@@ -65,11 +70,14 @@ class Model:
         def Clear(self):
             self.bpRef.clear()
             self.dataTable.clear()
-            
+           
     class ppUngriddedTableDef:
         utID = None
-        name = None
-            
+        dataPointStr = []
+        
+        def Clear(self):
+            self.dataPointStr.clear()
+        
     class ppFunction:
         name = None
         fdName = None
@@ -86,17 +94,49 @@ class Model:
             self.bpVals.clear()
             self.dataTable.clear()
             self.imax.clear()
-
+            
+        def Interpolate(self, index, data):
+            c = math.floor(index/self.imax[0])
+            a = []
+            a.append(c)
+            a.append(index - self.imax[0]*c)
+            b = []
+            b.append(0)
+            b.append(self.imax[0])
+            tv = []
+            dv = []
+            for bpi in range(self.numBreakPts):
+                i = a[bpi]
+                v = data[self.independentVarRef[bpi].varID] - self.bpVals[bpi][i]
+                D = (self.bpVals[bpi][i+1] - self.bpVals[bpi][i])
+                dv.append(v / D)
+                tv.append(self.dataTable[index + b[bpi]])
+                tv.append(self.dataTable[index + b[bpi] + 1])
+            
+            numT = len(tv) - 2
+            di = dv[0]
+            for ti in range(numT):
+                di = dv[1]
+                tv[ti] = dv[0]*tv[2+ti] + (1 - dv[0])*tv[ti]
+                
+            value = (tv[1] - tv[0])*di + tv[0]
+            
+            return value
+        
         def Evaluate(self, data):
             index = 0
             for bpi in range(self.numBreakPts):
                 v = data[self.independentVarRef[bpi].varID]
                 i = 0
-                for a in self.bpVals[bpi]:
+                # This for loop does not include the last item [:-1] so that 
+                # i+1 indices will not go out of range during interpolation.
+                for a in self.bpVals[bpi][:-1]:
                     if a <= v:
                         i += 1
                 index += (i-1) * self.imax[bpi]    
-            data[self.dependentVarID] = self.dataTable[index]
+            
+            data[self.dependentVarID] = self.Interpolate(index, data)
+            
             return
         
     class ppFunctionVar:
@@ -139,6 +179,7 @@ class Model:
         for g in self.GtDef:
             g.Clear()
         self.GtDef.clear()
+        self.UgtDef.clear()
         for f in self.FunctionDef:
             f.Clear()
         self.FunctionDef.clear()
@@ -176,9 +217,12 @@ class Model:
         # Change variable names in equations to self.Data[] dictionary
         for v in self.VarDef:
             # function variables are not inputs
+            # mark variable as having an associated function
             for f in self.FunctionDef:
                 if v.varID == f.dependentVarID:
                     v.isInput = False
+                    v.hasFunction = True
+                    v.functionDef = f
             if v.hasMath:
                 newText = v.codeText.replace("{", "self.Data[\"")
                 newText = newText.replace("}", "\"]")
@@ -192,9 +236,9 @@ class Model:
         print("+++++ MODEL INPUTS AND OUTPUTS +++++")
         for v in self.VarDef:
             if v.isInput:
-                print("++> Input: ", v.name)
+                print("++> Input: ", v.varID)
             if v.isOutput:
-                print("++> Output: ", v.name)
+                print("++> Output: ", v.varID)
         print("++++++++++++++++++++++++++++++++++++")
         
         # connect the gridded tables with break points to functions
@@ -230,13 +274,13 @@ class Model:
             
     def Update(self):
         """Update all the values in the model."""
-        for f in self.FunctionDef:
-            f.Evaluate(self.Data)
-            
-        # Evaluate the MATH-ML equations
+        
+        # Evaluate the MATH-ML equations and functions
         for v in self.VarDef:
             if v.hasMath:
                 self.Data[v.varID] = eval(v.code)
+            elif v.hasFunction:
+                v.functionDef.Evaluate(self.Data)
 
     def Tag(self, name):
         """Put the namespace prefix on DAVE-ML tags
@@ -373,8 +417,19 @@ class Model:
             print(" gtDefStruct.dataTable: ", gtDefStruct.dataTable)
       
     # TODO: add ungridded table parsing
-    def UngriddedTableDef(self, e):
-        logging.info("-UngriddedTableDef-:  COMING SOON")
+    def UngriddedTableDef(self, e, printDebugData):
+        ugtDefStruct = self.ppUngriddedTableDef()
+        ugtDefStruct.utID = e.get('utID')
+        for label in e:
+            if label.tag == self.Tag("dataPoint"):
+                ugtDefStruct.dataPointStr.append( label.text )
+                
+        self.UgtDef.append(ugtDefStruct)
+        
+        if printDebugData:
+            print("-ugtDefStruct-")
+            print(" ugtDefStruct.utID: ", ugtDefStruct.utID)
+            print(" ugtDefStruct.dataPointStr: ", ugtDefStruct.dataPointStr)
 
     def Function(self, e, printDebugData):
         funDefStruct = self.ppFunction()
@@ -387,8 +442,8 @@ class Model:
                 indVar.varID = label.get('varID')
                 indVar.min = float( label.get('min') )
                 indVar.max = float( label.get('max') )
-                indVar.extrapolate = label.get('extrapolate')
-                indVar.interpolate = label.get('interpolate')
+                indVar.extrapolate = label.get('extrapolate','neither')
+                indVar.interpolate = label.get('interpolate','linear')
                 iVar.append(indVar)
             if label.tag == self.Tag("dependentVarRef"):
                 funDefStruct.dependentVarID = label.get('varID')
@@ -413,11 +468,11 @@ class Model:
             print(" funDefStruct.numBreakPts: ", funDefStruct.numBreakPts)
             print(" funDefStruct.dependentVarID: ", funDefStruct.dependentVarID)
             for iv in funDefStruct.independentVarRef:
-                print(" independentVarRef.varID: ", iv.varID)
-                print(" independentVarRef.min: ", iv.min)
-                print(" independentVarRef.max: ", iv.max)
-                print(" independentVarRef.extrapolate: ", iv.extrapolate)
-                print(" independentVarRef.interpolate: ", iv.interpolate)
+                print("   independentVarRef.varID: ", iv.varID)
+                print("   independentVarRef.min: ", iv.min)
+                print("   independentVarRef.max: ", iv.max)
+                print("   independentVarRef.extrapolate: ", iv.extrapolate)
+                print("   independentVarRef.interpolate: ", iv.interpolate)
     
     def ppPrint(self, str1, str2, printDebugData):
         if printDebugData:
@@ -519,7 +574,7 @@ class Model:
                 if daveFcn.tag == self.Tag("griddedTableDef"):
                     self.GriddedTableDef(daveFcn, printDebugData)
                 if daveFcn.tag == self.Tag("ungriddedTableDef"):
-                    self.UngriddedTableDef(daveFcn)
+                    self.UngriddedTableDef(daveFcn, printDebugData)
                 if daveFcn.tag == self.Tag("function"):
                     self.Function(daveFcn, printDebugData)
                 if daveFcn.tag == self.Tag("checkData"):

@@ -99,7 +99,7 @@
         <signal>
           <signalName>Cnp at 29 deg AOA</signalName>
           <varID>cnp</varID>
-          <signalValue>0.15</signalValue>
+          <signalValue>0.134</signalValue>
           <tol>0.000001</tol>
         </signal>
       </checkOutputs>

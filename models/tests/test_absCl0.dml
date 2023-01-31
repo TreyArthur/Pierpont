@@ -1,0 +1,167 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+  <fileHeader name="F-16 table test">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arhtur@nasa.gov"/>
+    <creationDate date="2023-01-24"/>
+    <fileVersion>Intial version$</fileVersion>         
+    <description>
+      Created for debugging absCl0 fails for sideslip check cases.
+    </description>
+  </fileHeader>
+
+  <variableDef name="angleOfAttack" varID="alpha" units="deg" symbol="&#x3B1;">
+    <description> Instantaneous true angle-of-attack, in degrees </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="angleOfSideslip" varID="beta" units="deg" symbol="&#x3B2;"
+               sign="wind in right ear">
+    <description> Instantaneous true angle-of-sideslip, in degrees </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="absbeta" varID="absbeta" units="deg">
+    <description> Absolute value of angle-of-sideslip, deg. </description>
+    <calculation>
+      <python>abs({beta})</python>
+      <math>
+        <apply>
+          <abs/>
+          <ci>beta</ci>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+  
+  <variableDef name="absCl0" varID="absCl0" units="nd">
+    <description> Absolute value of rolling moment coefficient </description>
+  </variableDef>
+  
+  <variableDef name="Cl0" varID="clt" units="nd" sign="right wing down">
+    <description> Basic coefficient of moment around the X-body direction (roll) (+RWD) </description>
+    <calculation>
+      <python>-{absCl0} if {beta} &lt; 0 else {absCl0}</python>
+      <math>
+        <apply>
+          <piecewise>
+            <piece>
+              <apply>
+                <minus/>
+                <ci>absCl0</ci>
+              </apply>
+              <apply>
+                <lt/>
+                <ci>beta</ci>
+                <cn>0</cn>
+              </apply>
+            </piece>
+            <otherwise>
+              <ci>absCl0</ci>
+            </otherwise>
+          </piecewise>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+  
+  <breakpointDef name="alpha" bpID="ALPHA1" units="d">
+    <description> Alpha breakpoints for basic and damping aero tables </description>
+    <bpVals> -10., -5., 0., 5., 10., 15., 20., 25., 30., 35., 40., 45. </bpVals>
+  </breakpointDef>
+
+  <breakpointDef name="beta" bpID="BETA1" units="d">
+    <description> Angle-of-sideslip breakpoints for basic aero tables </description>
+    <bpVals> 0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0 </bpVals>
+  </breakpointDef>
+
+  <function name="Basic Cl">
+    <description> 
+      Basic coefficient of rolling moment as a function of angle of
+      attack and sideslip angle
+    </description>
+    <provenance>
+      <author name="Bruce Jackson" org="NASA Langley Research Center"
+              email="bruce.jackson@nasa.gov"/>
+      <creationDate date="2002-03-28"/>
+      <documentRef refID="REF01"/>
+      <documentRef refID="REF02"/>
+      <documentRef refID="REF03"/>
+    </provenance>
+    <independentVarRef varID="absbeta" min="0.0" max="30.0" extrapolate="neither"/>
+    <!-- Beta breakpoints -->
+    <independentVarRef varID="alpha" min="-10.0" max="45.0" extrapolate="neither"/>
+    <!-- Alpha breakpoints -->
+    <dependentVarRef varID="absCl0"/>
+
+    <functionDefn name="Cl0_fn">
+      <griddedTable name="Cl0_table">
+        <breakpointRefs>
+          <bpRef bpID="BETA1"/>
+          <bpRef bpID="ALPHA1"/>
+        </breakpointRefs>
+        <dataTable>
+          <!-- Note: last breakpoint (alpha) changes most rapidly -->
+          <!--  -10    -5     0     5    10    15    20    25    30    35    40    45     Alpha             -->
+                 0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.,    <!-- |Beta| =  0. --> 
+               -.001,-.004,-.008,-.012,-.016,-.022,-.022,-.021,-.015,-.008,-.013,-.015,   <!-- |Beta| =  5. --> 
+               -.003,-.009,-.017,-.024,-.030,-.041,-.045,-.040,-.016,-.002,-.010,-.019,   <!-- |Beta| = 10. --> 
+               -.001,-.010,-.020,-.030,-.039,-.054,-.057,-.054,-.023,-.006,-.014,-.027,   <!-- |Beta| = 15. --> 
+                .000,-.010,-.022,-.034,-.047,-.060,-.069,-.067,-.033,-.036,-.035,-.035,   <!-- |Beta| = 20. --> 
+                .007,-.010,-.023,-.034,-.049,-.063,-.081,-.079,-.060,-.058,-.062,-.059,   <!-- |Beta| = 25. --> 
+                .009,-.011,-.023,-.037,-.050,-.068,-.089,-.088,-.091,-.076,-.077,-.076    <!-- |Beta| = 30. --> 
+	</dataTable>
+      </griddedTable>
+    </functionDefn>
+  </function>
+  
+  <checkData>
+  <staticShot name="Nominal" refID="NOTE1">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue> 5.000</signalValue>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue> 0.000</signalValue>
+        </signal>
+      </checkInputs>
+      <internalValues>
+        <signal> <varID>alpha</varID> <signalValue>5.0</signalValue> </signal>
+        <signal> <varID>beta</varID> <signalValue>0.0</signalValue> </signal>
+        <signal> <varID>absbeta</varID> <signalValue>0.0</signalValue> </signal>
+        <signal> <varID>absCl0</varID> <signalValue>0.0</signalValue> </signal>
+        <signal> <varID>clt</varID> <signalValue>0.0</signalValue> </signal>
+      </internalValues>
+    </staticShot>
+    
+    <staticShot name="Positive sideslip" refID="NOTE1">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue> 5.000</signalValue>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue> 2.340</signalValue>
+        </signal>
+      </checkInputs>
+      <internalValues>
+        <signal> <varID>alpha</varID> <signalValue>5.0</signalValue> </signal>
+        <signal> <varID>beta</varID> <signalValue>2.34</signalValue> </signal>
+        <signal> <varID>absbeta</varID> <signalValue>2.34</signalValue> </signal>
+        <signal> <varID>absCl0</varID> <signalValue>-0.0056159999999999995</signalValue> </signal>
+        <signal> <varID>clt</varID> <signalValue>-0.0056159999999999995</signalValue> </signal>
+      </internalValues>
+    </staticShot>
+  </checkData>
+</DAVEfunc>

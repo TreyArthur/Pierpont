@@ -1,11 +1,10 @@
 <?xml version="1.0" standalone="no"?>
 <!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 2.0//EN" "DAVEfunc.dtd">
-<!-- $Revision: 393 $ -->
 <DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
   <fileHeader name="F-16 Subsonic Aerodynamics Model (a la Garza)">
     <author name="Bruce Jackson" org="NASA Langley Research Center" email="bruce.jackson@nasa.gov"/>
     <creationDate date="2003-06-10"/>
-    <fileVersion>$ Revision: 394 $</fileVersion>         
+    <fileVersion>$ Revision: 395 $</fileVersion>         
     <description>
       F-16 Aero Data file. Based on Morelli's adaptation of Stevens
       and Lewis' F-16 example [1] described in Garza &amp; Morelli's
@@ -36,16 +35,16 @@
     <reference refID="NOTE1" author="Bruce Jackson" title="Checkcase data source"
                date="2004-02-13">
       <description> 
-	From E. A. Morelli's f16 matlab script, dated 09-Oct-2000;
-	Generated using 'make_DAVEML_checkcases.m'
+       From E. A. Morelli's f16 matlab script, dated 09-Oct-2000;
+       Generated using 'make_DAVEML_checkcases.m'
       </description>
     </reference>
 
     <modificationRecord modID="A" date="2004-02-11">
       <author name="Bruce Jackson" org="NASA Langley Research Center"
               email="bruce.jackson@nasa.gov"/>
-      <description> Added checkcase static shots and internal values
-      for debugging purposes.
+      <description> 
+       Added checkcase static shots and internal values for debugging purposes.
       </description>
     </modificationRecord>
 
@@ -53,9 +52,9 @@
       <author name="Bruce Jackson" org="NASA Langley Research Center"
               email="bruce.jackson@nasa.gov"/>
       <description>
-	Corrected to DAVEfunc.dtd 1.9 standards: replaced xns with
-	email; corrected dates to ANSI; replaced docIC with refID in
-	documentRefs; added fileVersion element
+       Corrected to DAVEfunc.dtd 1.9 standards: replaced xns with
+       email; corrected dates to ANSI; replaced docIC with refID in
+       documentRefs; added fileVersion element
       </description>
     </modificationRecord>
 
@@ -78,7 +77,6 @@
         my email alias.
       </description>
     </modificationRecord>
-
 
     <modificationRecord modID="E" date="2008-10-08">
       <author name="Bruce Jackson" org="NASA Langley Research Center"
@@ -110,11 +108,11 @@
       <author name="Bruce Jackson" org="NASA Langley Research Center"
               email="bruce.jackson@nasa.gov"/>
       <description>
-	Removed extra comma from end of dldr_fn table; added some
-	comments and cleaned up missing whitespace that was stripped
-	some time ago, probably in a pass through the Oxygen
-	editor. Replaced calculation of rtd with constant value for
-	speed.
+       Removed extra comma from end of dldr_fn table; added some
+       comments and cleaned up missing whitespace that was stripped
+       some time ago, probably in a pass through the Oxygen
+       editor. Replaced calculation of rtd with constant value for
+       speed.
       </description>
     </modificationRecord>
 
@@ -122,14 +120,22 @@
       <author name="Bruce Jackson" org="NASA Langley Research Center"
               email="bruce.jackson@nasa.gov"/>
       <description>
-	Replaced all internal values with freshly-generated ones from
-	DAVEtool after Trey Arthur spotted incorrect ones in
-	pos. pitch rate checkcase; probably a cut-and-paste error in
-	an attempt to save time. Internal values were changed slightly
-	due to modification H above which reduced precision of 'rtd'.
+       Replaced all internal values with freshly-generated ones from
+       DAVEtool after Trey Arthur spotted incorrect ones in
+       pos. pitch rate checkcase; probably a cut-and-paste error in
+       an attempt to save time. Internal values were changed slightly
+       due to modification H above which reduced precision of 'rtd'.
       </description>
     </modificationRecord>
-
+    
+    <modificationRecord modID="J" date="2023-01-029">
+      <author name="Trey Arthur" org="NASA Langley Research Center"
+              email="trey.arthur@nasa.gov"/>
+      <description>
+       Fixed error in Negative Sideslip check case: signal out was 'cz' 
+       instead of 'cn'.
+      </description>
+    </modificationRecord>
 
   </fileHeader>
 
@@ -2065,7 +2071,7 @@ return
         </signal>
         <signal>
           <signalName>aeroYawBodyMomentCoefficient</signalName>
-          <varID>cz</varID>
+          <varID>cn</varID>
           <signalUnits/>
           <signalValue>-0.01065792000000</signalValue>
           <tol>0.000001</tol>

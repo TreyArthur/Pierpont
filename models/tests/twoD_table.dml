@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE DAVEfunc PUBLIC "-//NASA//DTD for Flight Dynamic Models - Functions 1.9//EN" "DAVEfunc.dtd">
 <DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
-  <fileHeader name="2D gridded table">
 
+  <fileHeader name="2D gridded table">
     <author name="Bruce Jackson" org="NASA Langley Research Center" email="e.b.jackson@nasa.gov"/>
     <fileCreationDate date="2002-03-01"/>
-    <fileVersion>$Revision: 108 $</fileVersion>		
+    <fileVersion>MOD D: 2023-01-07</fileVersion>
     <description> Coefficient of lift (non-dimensional) - single two-dimensional table. Example file
       for DAVE function table format. This example is more complex. </description>
 
@@ -18,9 +18,9 @@
     <modificationRecord modID="A" refID="REF03" date="2002-03-01">
       <author name="Hildrup, Bruce L." org="SAID Patuxent River">
         <address>
-	    1087 Exploration Parkway Ste 201
-	    Lexington Park, MD 20654
-	  </address>
+        1087 Exploration Parkway Ste 201
+        Lexington Park, MD 20654
+        </address>
       </author>
       <description> Reversed sign on drag term for better performance! </description>
     </modificationRecord>
@@ -42,6 +42,12 @@
       </author>
       <description> Changed dataTable elements to be comma separated. Added fileheader name 
         attribute. </description>
+    </modificationRecord>
+    
+    <modificationRecord modID="D" date="2023-01-07">
+      <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      </author>
+      <description> Added more check cases for linear interpolation checks. </description>
     </modificationRecord>
 
   </fileHeader>
@@ -124,6 +130,8 @@
   </function>
 
   <checkData>
+  
+    <!-- Case 1 -->
     <staticShot name="AOA 4 deg; Mach 0.9">
       <checkInputs>
         <signal>
@@ -137,7 +145,6 @@
           <signalValue>0.9</signalValue>
         </signal>
       </checkInputs>
-
       <checkOutputs>
         <signal>
           <signalName>CL</signalName>
@@ -147,6 +154,104 @@
         </signal>
       </checkOutputs>
     </staticShot>
+    
+    <!-- Case 2 -->
+    <staticShot name="AOA -2 deg; Mach 0.0">
+      <checkInputs>
+        <signal>
+          <signalName>AOA</signalName>
+          <varID>ALPHA</varID>
+          <signalValue>-2.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>MACH number</signalName>
+          <varID>MACH</varID>
+          <signalValue>0.0</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>CL</signalName>
+          <varID>CL</varID>
+          <signalValue>0.782780</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+  
+    <!-- Case 3 -->
+    <staticShot name="AOA -8 deg; Mach 0.85">
+      <checkInputs>
+        <signal>
+          <signalName>AOA</signalName>
+          <varID>ALPHA</varID>
+          <signalValue>8.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>MACH number</signalName>
+          <varID>MACH</varID>
+          <signalValue>0.85</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>CL</signalName>
+          <varID>CL</varID>
+          <signalValue>0.688455</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
+    <!-- Case 4 -->
+    <staticShot name="AOA 2 deg; Mach 0.2">
+      <checkInputs>
+        <signal>
+          <signalName>AOA</signalName>
+          <varID>ALPHA</varID>
+          <signalValue>2.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>MACH number</signalName>
+          <varID>MACH</varID>
+          <signalValue>0.2</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>CL</signalName>
+          <varID>CL</varID>
+          <signalValue>0.454532</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
+    
+    <!-- Case 5 -->
+    <staticShot name="AOA 0 deg; Mach 1.2">
+      <checkInputs>
+        <signal>
+          <signalName>AOA</signalName>
+          <varID>ALPHA</varID>
+          <signalValue>0.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>MACH number</signalName>
+          <varID>MACH</varID>
+          <signalValue>1.2</signalValue>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>CL</signalName>
+          <varID>CL</varID>
+          <signalValue>0.89365</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
   </checkData>
 
 </DAVEfunc>
