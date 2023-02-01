@@ -5,6 +5,14 @@ import logging
 class Model:
     """A class hold the DAVE-ML model data
     
+    [DAVE-ML](http://daveml.org)
+    
+    In XML, you must escape:  
+
+    " with &quot;  
+    < with &lt;  
+    & with &amp;  
+
     Attributes:
         Data : a key-value pair containing aero data. 
         NameToId : a key-value pair to find varID given a name. 

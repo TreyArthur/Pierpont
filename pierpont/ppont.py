@@ -59,6 +59,29 @@ class UnitTest:
 class Convert(UnitTest):
     """A class for performing unit conversions.
     
+    | unit           | abbreviation |
+    |:---------------|:-------------|
+    | second         | s            |
+    | minute         | min          |
+    | inch           | inch         |
+    | foot           | ft           |
+    | meter          | m            |
+    | nautical mile  | nmi          |
+    | statute mile   | smi          |
+    | kilometer      | km           |
+    | centimeter     | cm           |
+    | millimeter     | mm           |
+    | pound force    | lbf          |
+    | Newton         | N            |
+    | kilogram force | kgf          |
+    | kilogram       | kg           |
+    | pound mass     | lbm          |
+    | slug           | slug         |
+    | degree         | deg          |
+    | radian         | rad          |
+    | knot (nmi/hr)  | kt           |
+    | nondimensional | nd           |
+
     Attributes:
         KnotToFps: scale factor to convert knots to feet per second.
         FpsToKnot: scale factor to convert feet per second to knots.
@@ -487,6 +510,21 @@ class Earth(Planet):
         
         U.S. Standard Atmosphere, 1976, NASA-TM-X-74335
         
+        The height is geopotential height (Z) in meters above MSL.  The reference 
+        for the [US Standard Atmosphere 1976](https://ntrs.nasa.gov/citations/19770009539).  
+        The refernence for the 
+        [pressure equation](https://en.wikipedia.org/wiki/Barometric_formula). 
+
+        Layer | Height (m) | Pressure (Pa) | Temperature (K) | Temperature Lapse Rate (K/m)
+        :----:|-----------:|:--------------|:----------------|:----------------------------
+        0     | 0          | 101,325       | 288.15          | -0.0065
+        1     | 11,000     | 22,632.1      | 216.65          | 0
+        2     | 20,000     | 5,474.89      | 216.65          | 0.001
+        3     | 32,000     | 868.019       | 228.65          | 0.0028
+        4     | 47,000     | 110.906       | 270.65          | 0
+        5     | 51,000     | 66.9389       | 270.65          | -0.0028
+        6     | 71,000     | 3.95642       | 214.65          | -0.002
+        
         Input: 
             geometric altitude in meters
         Output:
@@ -690,7 +728,11 @@ class Earth(Planet):
         
 ###############################################################################
 class Moon(Planet):
-    """A simple gravity model of the moon."""
+    """A simple gravity model of the moon.
+    
+    The reference for the moon parameters is [NESC Academy Presentation]
+    (https://nescacademy.nasa.gov/video/02f47c99e5944e20a31931ce78fd4ea21d).
+    """
     def __init__(self):
         self.RotationRate = 2.6617072235e-6  # Moon Rotation Rate (rad/sec, East)
         self.GM = 4.90154449e12
@@ -717,7 +759,11 @@ class Moon(Planet):
         
 ###############################################################################
 class Mars(Planet):
-    """A gravity and atmosphere model for Mars."""
+    """A gravity and atmosphere model for Mars.
+
+    The reference for the [Mars atmosphere model]
+    (https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmrm.html).  
+    """
     def __init__(self):
         self.GM = 42828.371901284e9
         self.RotationRate = 7.0882181e-5  # Mars Rotation Rate (rad/sec, East)
@@ -869,7 +915,60 @@ class Vector3(UnitTest):
         
 ###############################################################################
 class Quaternion(UnitTest):
-    """A quaternion class for EOM."""
+    """A quaternion class for EOM.
+    
+    Reference for checking [quaternion rotation]
+    (https://www.andre-gaschler.com/rotationconverter/).  
+    
+    Quaternion multiplication checked [here]
+    (https://www.vcalc.com/wiki/vCalc/Quaternion+Multiplication).
+    
+    $t=q*r=t_0 + \mathbf{i}t_1 + \mathbf{j}t_2 + \mathbf{k}t_3$  
+    $t_0 = q_0r_0 - q_1r_1 - q_2r_2 - q_3r_3$  
+    $t_1 = q_1r_0 + q_0r_1 - q_3r_2 + q_2r_3$  
+    $t_2 = q_2r_0 + q_3r_1 + q_0r_2 - q_1r_3$  
+    $t_3 = q_3r_0 - q_2r_1 + q_1r_2 + q_0r_3$  
+
+    System b to a -> $q_{b/a}$
+
+    $u^b = q_{b/a}^{-1} * u^a * q_{b/a}$, and $q_{b/a}^{-1} = q_{a/b}$  
+    $u^c = q_{c/b}^{-1} q_{b/a}^{-1} \, u^a \, q_{b/a} q_{c/b}$
+
+    $v^{frd} = q_{\phi}^{-1} q_{\theta}^{-1} q_{\psi}^{-1} \, v^{ned} \, q_{\psi} q_{\theta} q_{\phi}$
+
+    $q_{frd/ned} = q_{\psi} q_{\theta} q_{\phi} = 
+    \begin{matrix}
+    \cos\frac{\phi}{2}\cos\frac{\theta}{2}\cos\frac{\psi}{2} + \sin\frac{\phi}{2}\sin\frac{\theta}{2}\sin\frac{\psi}{2}\\
+    \sin\frac{\phi}{2}\cos\frac{\theta}{2}\cos\frac{\psi}{2} - \cos\frac{\phi}{2}\sin\frac{\theta}{2}\sin\frac{\psi}{2} \\
+    \cos\frac{\phi}{2}\sin\frac{\theta}{2}\cos\frac{\psi}{2} + \sin\frac{\phi}{2}\cos\frac{\theta}{2}\sin\frac{\psi}{2} \\
+    \cos\frac{\phi}{2}\cos\frac{\theta}{2}\sin\frac{\psi}{2} - \sin\frac{\phi}{2}\sin\frac{\theta}{2}\cos\frac{\psi}{2}
+    \end{matrix}$
+
+    $q_{ned/ecf} = 
+    \begin{matrix}
+    \phantom{-} \cos\frac{lon}{2} \cos(\frac{lat}{2} + 45^{\circ}) \\
+    \phantom{-} \sin\frac{lon}{2} \sin(\frac{lat}{2} + 45^{\circ}) \\
+    -\cos\frac{lon}{2} \sin(\frac{lat}{2} + 45^{\circ}) \\
+    \phantom{-} \sin\frac{lon}{2} \cos(\frac{lat}{2} + 45^{\circ})
+    \end{matrix}$
+
+    $\omega^{frd} = q_{frd/ned}^{-1} q_{ned/ecf}^{-1} \, \omega^{ecf} \, q_{ned/ecf} q_{frd/ned}$
+
+    $F^{ecf} = q_{ecf/ned}^{-1} q_{ned/frd}^{-1} \, F^{frd} \, q_{ned/frd} q_{ecf/ned}$  
+    $\phantom{F^{ecf}} = q_{ned/ecf} q_{frd/ned} \, F^{frd} \, q_{frd/ned}^{-1} q_{ned/ecf}^{-1}$
+
+    $v^{ecf} = q_{ecf/ned}^{-1} q_{ned/frd}^{-1} \, v^{frd} \, q_{ned/frd} q_{ecf/ned}$  
+    $\phantom{v^{ecf}} = q_{ned/ecf} q_{frd/ned} \, v^{frd} \, q_{frd/ned}^{-1} q_{ned/ecf}^{-1}$  
+
+    $u^{ned} = q_{ned/frd}^{-1} \, u^{frd} \, q_{ned/frd}$  
+    $q_{ned/frd}^{-1} = q_{frd/ned}$  
+    $u^{ned} = q_{frd/ned} \, 
+    \begin{bmatrix}
+    0 \\
+    u
+    \end{bmatrix}
+    \, q_{frd/ned}^{-1}$  
+    """
     def __init__(self, n, x, y, z):
         self.N = n
         self.X = x
@@ -1705,7 +1804,67 @@ class Simulation(Convert):
         
 ###############################################################################
 class FlatEarth(Simulation):
+    """ Flat Earth equations.
+    
+    Create a simulation for a flat Earth model. Singularities exist at the poles.  
+    Vehicle must be symmetric about the x body axis.  Vehicle pitch must stay 
+    below $90^\circ$.
 
+    <u>Force Equations</u>  
+    $\dot{U} = RV - QW - g_D \, \sin \theta + \frac{X_A + X_T}{m}$  
+    $\dot{V} = PW - RU + g_D \, \sin \phi \, \cos \theta + \frac{Y_A + Y_T}{m}$  
+    $\dot{W} = QU - PV + g_D \, \cos \phi \, \cos \theta + \frac{Z_A + Z_T}{m}$  
+    In vector form,  
+    $\dot{\vec{v}} = \frac{F}{m} + R_{n/b} 
+    \begin{pmatrix} 0 \\ 0 \\ g_D \end{pmatrix} - \vec{\omega} \times \vec{v}$  
+    where $R_{n/b}$ is the rotation matrix from NED to body.  
+    $R_{n/b} = 
+    \begin{bmatrix} 
+    1 &         0 &        0 \\
+    0 &  \cos \phi & \sin \phi \\
+    0 & -\sin \phi & \cos \phi
+    \end{bmatrix} 
+    \begin{bmatrix} 
+    \cos \theta &         0 & -\sin \theta \\
+    0           &         1 &            0 \\
+    \sin \theta &         0 & \cos \theta
+    \end{bmatrix}
+    \begin{bmatrix} 
+     \cos \psi &  \sin \psi & 0 \\
+    -\sin \psi &  \cos \psi & 0 \\
+             0 &          0 & 1
+    \end{bmatrix}$  
+    $R_{b/n} = [R_{n/b}]^T$  
+
+    <u>Kinematic equations</u>   
+    $\dot{\phi} = P + \tan \theta \, (Q \sin \phi + R \cos \phi)$  
+    $\dot{\theta} = Q \cos \phi - R \sin \phi$  
+    $\dot{\psi} = (Q \sin \phi + R \cos \phi) \, / \, \cos \theta$  
+    In vector form,  
+    $\dot{\Phi} = H {\omega}^b$, where $H = 
+    \begin{pmatrix}
+    1 & \sin \phi \tan \theta & \cos \phi \tan \theta \\
+    0 & \cos \phi             & -\sin \phi \\
+    0 & \sin \phi / \cos \theta & \cos \phi / \cos \theta
+    \end{pmatrix}$  
+
+    <u>Moment Equations</u>  
+    $\Gamma \dot{P} = J_{xz} [J_x - J_y + J_z]PQ - [J_z(J_z - J_y) + J^2_{xz}]QR + l J_z + n J_{xz}$  
+    $J_y \dot{Q} = (J_z - J_x)PR - J_{xz}(P^2 - R^2) + m$  
+    $\Gamma \dot{R} = [(J_x - J_y)J_x + J^2_{xz}]PQ - J_{xz}[J_x - J_y + J_z]QR + l J_{xz} n J_x$  
+    $\Gamma = J_x J_z - J^2_{xz}$  
+    In vector form,  
+    $\dot{\omega^b_{b/i}} = J^{-1}(M^b - \omega^b_{b/i} J \omega^b_{b/i} )$
+
+    <u>Navigation Equations</u>  
+    $\dot{p_N} = U c\theta c\psi + V(-c\phi s\psi + s\phi s\theta c\psi) 
+    + W(s\phi s\psi + c\phi s\theta c\psi)$  
+    $\dot{p_E} = U c\theta s\psi + V(c\phi c\psi + s\phi s\theta s\psi)
+    + W(-s\phi c\psi + c\phi s\theta c\psi)$  
+    $\dot{h} = U s\theta - V s\phi c\theta - W c\phi c\theta$  
+    In vector form,  
+    $\dot{\vec{p}} = R_{b/n} \vec{v}$
+    """
     gD = 0
     mass = 0
     
@@ -1989,6 +2148,37 @@ class FlatEarth(Simulation):
         
 ###############################################################################
 class slEarthSim(Simulation):
+    """
+    The software implements the oblate rotating planet EOM as derived in 
+    [Stevens and Lewis]
+    (https://bcs.wiley.com/he-bcs/Books?action=index&itemId=0471371459&itemTypeId=BKS&bcsId=2073). 
+    
+    Equations in LaTeX format:
+    
+    $\dot{q_0} = -0.5 * (Pq_1 + Qq_2 + Rq_3)$  
+    $\dot{q_1} = 0.5 * (Pq_0 + Rq_2 - Qq_3)$  
+    $\dot{q_2} = 0.5 * (Qq_0 - Rq_1 + Pq_3)$  
+    $\dot{q_3} = 0.5 * (Rq_0 + Qq_1 - Pq_2)$  
+
+    $\dot{P_x} = V_x$  
+    $\dot{P_y} = V_y$  
+    $\dot{P_z} = V_z$  
+    where $P$ and $V$ are in the ECEF frame.
+
+    $\dot{v_x} = \frac{F_x}{m} + 2 \omega_e V_y + g_x + P_x \omega^2_e$  
+    $\dot{v_y} = \frac{F_y}{m} - 2 \omega_e V_x + g_y + P_y \omega^2_e$  
+    $\dot{v_z} = \frac{F_z}{m} + g_z$  
+    where $\omega_e$ is the rotation rate of Earth.  The terms $g_x$, $g_y$, 
+    and $g_z$ are the $J_2$ gravity components in ECEF. This acceleration equation 
+    is in the ECEF frame.
+
+    $\Gamma \dot{P} = J_{xz} [J_x - J_y + J_z]PQ - [J_z(J_z - J_y) + J^2_{xz}]QR 
+      + l J_z + n J_{xz}$  
+    $J_y \dot{Q} = (J_z - J_x)PR - J_{xz}(P^2 - R^2) + m$  
+    $\Gamma \dot{R} = [(J_x - J_y)J_x + J^2_{xz}]PQ - J_{xz}[J_x - J_y + J_z]QR 
+      + l J_{xz} n J_x$  
+    where $\Gamma = J_x J_z - J^2_{xz}$ 
+    """
     Planet = Earth()
     RotationAngle = 0
     EarthRotation = Quaternion(0, 0, 0, Planet.RotationRate)
