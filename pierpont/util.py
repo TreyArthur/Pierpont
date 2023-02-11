@@ -153,7 +153,7 @@ def PrintErrorTable(tableTitle, labels, simData, checkData):
     print ("{:<25} {:<7} {:<7} {:<7}".format('--------', '--', '-----','--------'))
     barLinf = {}
     for i in labels:
-        tmpDist = GetDataNorms(checkData[i], simData.ImperialData[i], i.find("_deg_"))
+        tmpDist = GetDataNorms(checkData[i], simData.RecData.Imperial[i], i.find("_deg_"))
         td0 = round(tmpDist[0], 3)
         td1 = round(tmpDist[1], 3)
         #fd = Frechet(checkData['time'], checkData[i], 

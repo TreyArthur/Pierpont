@@ -149,7 +149,14 @@ class Convert(UnitTest):
         "n": NewtonToPound,
         "kg": KgToSlug,
         "kgm2": Kgm2ToSlugft2,
-        "s": 1
+        "s": 1,
+        "m->ft": MeterToFeet,
+        "m_s->ft_s": MeterToFeet,
+        "rad->deg": RadToDeg,
+        "rad_s->deg_s": RadToDeg,
+        "m_s2->ft_s2": MeterToFeet,
+        "n->lbf": NewtonToPound,
+        "m_s->nmi_h": MpsToKt
     }
     
     def LogWarn(self, inUnit):
@@ -344,6 +351,11 @@ class Planet(UnitTest):
     Eccentricity = 0
     EccentricitySquared = 0
     
+    density = 0
+    temperature = 0
+    pressure = 0
+    speedOfSoundMps = 0
+    
     def CalcSemiMinor(self):
         """Calculate the semi-minor axis based on semi-major and flattening 
         values.
@@ -374,7 +386,7 @@ class Planet(UnitTest):
         return x, y, z
     
     def PcpfToLlaZhu(self, x, y, z):
-        """Convert from ECEF coordinates to geodetic using the reference below.
+        """Convert from ECEF coordinates to geodetic using Zhu.
         
         A closed form solution with no singularities.
         
@@ -411,7 +423,7 @@ class Planet(UnitTest):
         self.Altitude  = U * ( 1.0 - (b*b)/(a*V) )
         
     def PcpfToLlaOsen(self, x, y, z):
-        """Convert ECEF to geodetic using Osen 
+        """Convert ECEF to geodetic using Osen.
         
         (DO NOT USE; needs debugging)
         
@@ -491,6 +503,14 @@ class Planet(UnitTest):
         
     def AirData(self, altitude):
         pass
+    
+    def DynamicPressure(self, altitude, trueAirspeed):
+        # get dynamic pressure:  q = 1/2 rho v^2
+        self.AirData(altitude) 
+        
+        dynamicPressure = 0.5 * self.density * trueAirspeed * trueAirspeed
+        
+        return dynamicPressure
         
 ###############################################################################
 class Earth(Planet):
@@ -569,29 +589,31 @@ class Earth(Planet):
             
         deltaZ = z0 - Z[i] 
         
-        temperature = TG[i] * deltaZ + T[i]
-        temperature = temperature if (temperature > 0.0) else 0
+        airTemperature = TG[i] * deltaZ + T[i]
+        airTemperature = airTemperature if (airTemperature > 0.0) else 0
         
-        pressure = 0
+        airPressure = 0
         # The pressure is calculated differently depending
         # on the temperature lapse rate of the air layer. 
         if abs(TG[i]) < 1e-12:
-            pressure = P[i] * math.exp( (-g0 * M * deltaZ) / (Rstar * T[i]) )
+            airPressure = P[i] * math.exp( (-g0 * M * deltaZ) / (Rstar * T[i]) )
         else:
             pe = (-g0 * M) / (Rstar * TG[i])
-            pressure = P[i] * ((T[i] + TG[i] * deltaZ) / T[i])**pe
+            airPressure = P[i] * ((T[i] + TG[i] * deltaZ) / T[i])**pe
           
-        airDensity = (pressure / (Rgc * temperature)) if (temperature > 0.0) else 0
+        airDensity = (
+            (airPressure / (Rgc * airTemperature)) if (airTemperature > 0.0) else 0
+        )
         
-        assert temperature >= 0, "temp: {}, alt: {}".format(temperature, altitude)
-        speedOfSoundMps = math.sqrt( airGamma * Rgc * temperature )
+        assert airTemperature >= 0, "temp: {}, alt: {}".format(airTemperature, altitude)
+        airSpeedOfSoundMps = math.sqrt( airGamma * Rgc * airTemperature )
     
-        return airDensity, temperature, pressure, speedOfSoundMps
-    
-    #def AirDensity(self, altitude):
-    #    """Return the standard atmosphere air density """
-    #    result = self.AirData(altitude)
-    #    return result[0]
+        self.density = airDensity
+        self.temperature = airTemperature
+        self.pressure = airPressure
+        self.speedOfSoundMps = airSpeedOfSoundMps
+        
+        return
         
     def GravityConstant(self):
         """Constant gravity value for Earth """
@@ -679,29 +701,60 @@ class Earth(Planet):
         #self.TestValue(9.72, self.GravityJ2(25000,math.radians(45.0)), "gravity", 1e-2)
         #self.TestValue(9.56, self.GravityJ2(75000,math.radians(65.0)), "gravity", 1e-2)
         
-        self.ClassName = "Earth AirData Density"
-        di = 0  # air density index
-        self.TestValue(1.225, self.AirData(0)[di], "0m", 1e-3)
+        self.ClassName = "Earth AirData"
+        self.AirData(0)
+        self.TestValue(1.225, self.density, "density at 0m", 1e-3)
+        self.TestValue(288.15, self.temperature, "temperature at 0m", 1e-2)
+        self.TestValue(101325, self.pressure, "pressure at 0m", 1)
+        self.TestValue(340.294, self.speedOfSoundMps, "speed of sound at 0m", 0.1)
         
-        self.ClassName = "Earth AirData Temperature"
-        ti = 1  # temperature index
-        self.TestValue(288.15, self.AirData(0)[ti], "0m", 1e-2)
-        self.TestValue(275.156, self.AirData(2000)[ti], "2km", 1e-2)
-        self.TestValue(255.676, self.AirData(5000)[ti], "5km", 1e-2)
-        self.TestValue(216.65, self.AirData(12000)[ti], "12km", 1e-2)
-        self.TestValue(222.544, self.AirData(26000)[ti], "26km", 1e-2)
+        self.AirData(2000)
+        self.TestValue(1.00649, self.density, "density at 2km", 1e-3)
+        self.TestValue(275.156, self.temperature, "temperature at 2km", 1e-2)
+        self.TestValue(79505.1, self.pressure, "pressure at 2km", 10)
+        self.TestValue(332.529, self.speedOfSoundMps, "speed of sound at 2km", 0.1)
         
-        self.ClassName = "Earth AirData Pressure"
-        pi = 2  # pressure index
-        self.TestValue(101325, self.AirData(0)[pi], "0m", 1)
-        self.TestValue(79505.1, self.AirData(2000)[pi], "2km", 10)
-        self.TestValue(54048.8, self.AirData(5000)[pi], "5km", 10)
-        self.TestValue(19401, self.AirData(12000)[pi], "12km", 10)
-        self.TestValue(2188.41, self.AirData(26000)[pi], "26km", 1)
+        self.AirData(5000)
+        self.TestValue(0.736116, self.density, "density at 5km", 1e-3)
+        self.TestValue(255.676, self.temperature, "temperature at 5km", 1e-2)
+        self.TestValue(54048.8, self.pressure, "pressure at 5km", 10)
+        self.TestValue(320.529, self.speedOfSoundMps, "speed of sound at 5km", 0.1)
         
-        self.ClassName = "Earth AirData Sound"
-        si = 3  # speed of sound index
-        self.TestValue(340.294, self.AirData(0)[si], "0m", 1e-3)
+        self.AirData(12000)
+        self.TestValue(0.310828, self.density, "density at 12km", 1e-2)
+        self.TestValue(216.65, self.temperature, "temperature at 12km", 1e-2)
+        self.TestValue(19401, self.pressure, "pressure at 12km", 10)
+        self.TestValue(295.070, self.speedOfSoundMps, "speed of sound at 12km", 0.1)
+        
+        self.AirData(26000)
+        self.TestValue(0.0336882, self.density, "density at 26km", 1e-3)
+        self.TestValue(222.544, self.temperature, "temperature at 26km", 1e-2)
+        self.TestValue(2188.41, self.pressure, "pressure at 26km", 10)
+        self.TestValue(299.128, self.speedOfSoundMps, "speed of sound at 26km", 1.0)
+        
+        #self.ClassName = "Earth AirData Density"
+        #di = 0  # air density index
+        #self.TestValue(1.225, self.AirData(0)[di], "0m", 1e-3)
+        
+        #self.ClassName = "Earth AirData Temperature"
+        #ti = 1  # temperature index
+        #self.TestValue(288.15, self.AirData(0)[ti], "0m", 1e-2)
+        #self.TestValue(275.156, self.AirData(2000)[ti], "2km", 1e-2)
+        #self.TestValue(255.676, self.AirData(5000)[ti], "5km", 1e-2)
+        #self.TestValue(216.65, self.AirData(12000)[ti], "12km", 1e-2)
+        #self.TestValue(222.544, self.AirData(26000)[ti], "26km", 1e-2)
+        
+        #self.ClassName = "Earth AirData Pressure"
+        #pi = 2  # pressure index
+        #self.TestValue(101325, self.AirData(0)[pi], "0m", 1)
+        #self.TestValue(79505.1, self.AirData(2000)[pi], "2km", 10)
+        #self.TestValue(54048.8, self.AirData(5000)[pi], "5km", 10)
+        #self.TestValue(19401, self.AirData(12000)[pi], "12km", 10)
+        #self.TestValue(2188.41, self.AirData(26000)[pi], "26km", 1)
+        
+        #self.ClassName = "Earth AirData Sound"
+        #si = 3  # speed of sound index
+        #self.TestValue(340.294, self.AirData(0)[si], "0m", 1e-3)
         
         self.ClassName = "Planet Olsen"
         self.PcpfToLlaOsen(1191786.0, -5157122.0, 3562840.0)
@@ -743,7 +796,7 @@ class Moon(Planet):
     
     def AirData(self, altitude):
         """No atmosphere on the moon."""
-        return 0, 0, 0, 0
+        return
     
     def Gravity(self, altitude, latRad):
         """Moon gravity model."""
@@ -781,7 +834,13 @@ class Mars(Planet):
 
         pressureKPa = 0.699 * math.exp( -0.00009 * altitude )
         airDensity  = pressurePa / (0.1921 * (temperatureC + 273.1))
-        return airDensity, temperatureC, pressureKPa, 0
+        
+        self.density = airDensity
+        self.temperature = temperatureC
+        self.pressure = pressureKPa
+        self.speedOfSoundMps = 0
+        
+        return
     
     def Gravity(self, altitude, latRad):
         """Martian gravity model given the altitude and latitude."""
@@ -1440,7 +1499,7 @@ class Matrix3x3(UnitTest):
         print("Number of Matrix3x3 failed tests: ", self.FailCount)  
         
 ###############################################################################
-class ppIntegrator(UnitTest):
+class Integrator(UnitTest):
     def AdamsBashforth(self, h, current, past):
         k2 = [1.5, -0.5]
         k3 = [23.0/12.0, -16.0/12.0, 5.0/12.0]
@@ -1484,12 +1543,167 @@ class ppIntegrator(UnitTest):
         return result
     
     def UnitTest(self):
-        # TODO: add integration checks
         self.ClassName = "Integrator"
+        def I1p(arg):
+            return (-4.0*arg[0] + 3.0*arg[1] + 6)
+
+        def I2p(arg):
+            return (-2.4*arg[0] + 1.6*arg[1] + 3.6)
+        
+        h = 0.1
+        Xdot = [I1p, I2p]
+        arg = [0, 0]
+        T = [.1, .2, .3, .4, .5]
+        I1 = [ 0.538255, 0.9684983,  1.310717,  1.581263, 1.793505]
+        I2 = [0.3196263, 0.5687817, 0.7607328, 0.9063208, 1.014402]
+        for (t,i1,i2) in zip(T,I1,I2):
+            wOut = self.RungeKutta4(h, Xdot, arg)
+            arg = wOut
+            
+            self.TestValue( wOut[0], i1, "Integrator I1", 1e-5)
+            self.TestValue( wOut[1], i2, "Integrator I2", 1e-5)
+
         print("Number of Integrator failed tests: ", self.FailCount)
+
+###############################################################################
+class SaveData(Convert):
+    # data to record
+    Labels = ({
+        'gePosition_ft_X': ['ft', 'm'], 
+        'gePosition_ft_Y': ['ft', 'm'], 
+        'gePosition_ft_Z': ['ft', 'm'],
+        'feVelocity_ft_s_X': ['ft_s', 'm_s'], 
+        'feVelocity_ft_s_Y': ['ft_s', 'm_s'], 
+        'feVelocity_ft_s_Z': ['ft_s', 'm_s'],
+        'altitudeMsl_ft': ['ft', 'm'], 
+        'longitude_deg': ['deg', 'rad'],
+        'latitude_deg': ['deg', 'rad'],
+        'localGravity_ft_s2': ['ft_s2', 'm_s2'],
+        'eulerAngle_deg_Yaw': ['deg', 'rad'],
+        'eulerAngle_deg_Pitch': ['deg', 'rad'],
+        'eulerAngle_deg_Roll': ['deg', 'rad'],
+        'bodyAngularRateWrtEi_deg_s_Roll': ['deg_s', 'rad_s'],
+        'bodyAngularRateWrtEi_deg_s_Pitch': ['deg_s', 'rad_s'],
+        'bodyAngularRateWrtEi_deg_s_Yaw': ['deg_s', 'rad_s'],
+        'speedOfSound_ft_s': ['ft_s', 'm_s'],
+        'aero_bodyForce_lbf_X': ['lbf', 'N'], 
+        'aero_bodyForce_lbf_Y': ['lbf', 'N'], 
+        'aero_bodyForce_lbf_Z': ['lbf', 'N'], 
+        'trueAirspeed_nmi_h':  ['nmi_h', 'm_s'],
+        'eiPosition_ft_X': ['ft', 'm'],
+        'eiPosition_ft_Y': ['ft', 'm'],
+        'eiPosition_ft_Z': ['ft', 'm']
+    })
+    
+    Metric = {}
+    Imperial = {}
+          
+    def SiKey(self, key):
+        oUnit = '_'+self.Labels[key][0]
+        iUnit = '_'+self.Labels[key][1]
+        siKey = key.replace(oUnit, iUnit)
+        return siKey
+    
+    def Init(self):
+        self.Clear()
+        self.Metric['time'] = []
+        for key in self.Labels:
+            self.Imperial[key] = []
+            siKey = self.SiKey(key)
+            self.Metric[siKey] = []
+    
+    def AddTime(self, value):
+        self.Metric['time'].append(value)
+        return
+    
+    def Add(self, label, value):
+        self.Metric[label].append(value)
+        return
+    
+    def Make(self):        
+        for key in self.Labels:
+            siKey = self.SiKey(key)
+            
+            units = self.Labels[key][1] + '->' + self.Labels[key][0]
+            self.Imperial[key] = self.ToImperial(self.Metric[siKey],units)
+            
+    def Clear(self):
+        self.Imperial.clear()
+        self.Metric.clear()
+        
+    def UnitTest(self):
+        self.ClassName = "SaveData"
+        
+        self.Init()
+            
+        self.AddTime(1)
+        self.AddTime(2)
+        self.AddTime(3)
+        
+        self.Add('gePosition_m_X', 20)
+        self.Add('gePosition_m_X', 21)
+        self.Add('gePosition_m_X', 22)
+        self.Add('gePosition_m_Y', 50)
+        self.Add('gePosition_m_Y', 55)
+        self.Add('gePosition_m_Y', 60)
+        self.Add('feVelocity_m_s_X', 70)
+        self.Add('feVelocity_m_s_X', 71)
+        self.Add('feVelocity_m_s_X', 72)
+        self.Add('altitudeMsl_m', 20)
+        self.Add('longitude_rad', 3.14159)
+        self.Add('localGravity_m_s2', 9.81)
+        self.Add('bodyAngularRateWrtEi_rad_s_Roll', 1.570796)
+        self.Add('speedOfSound_m_s', 100.0)
+        self.Add('aero_bodyForce_N_X', 90.0)
+        self.Add('trueAirspeed_m_s', 150.0)
+        
+        self.Make()
+        
+        self.TestValue(1, self.Metric["time"][0], "time", 0.1)
+        self.TestValue(2, self.Metric["time"][1], "time", 0.1)
+        self.TestValue(3, self.Metric["time"][2], "time", 0.1)
+        
+        k = 'gePosition_ft_X'
+        self.TestValue(65.62, self.Imperial[k][0], k, 0.01)
+        self.TestValue(68.90, self.Imperial[k][1], k, 0.01)
+        self.TestValue(72.18, self.Imperial[k][2], k, 0.01)
+        
+        k = 'gePosition_ft_Y'
+        self.TestValue(164.04, self.Imperial[k][0], k, 0.01)
+        self.TestValue(180.45, self.Imperial[k][1], k, 0.01)
+        self.TestValue(196.85, self.Imperial[k][2], k, 0.01)
+        
+        k = 'feVelocity_ft_s_X'
+        self.TestValue(229.66, self.Imperial[k][0], k, 0.01)
+        self.TestValue(232.94, self.Imperial[k][1], k, 0.01)
+        self.TestValue(236.22, self.Imperial[k][2], k, 0.01)
+        
+        k = 'altitudeMsl_ft'
+        self.TestValue(65.62, self.Imperial[k][0], k, 0.01)
+        
+        k = 'longitude_deg'
+        self.TestValue(180.0, self.Imperial[k][0], k, 0.1)
+        
+        k = 'localGravity_ft_s2'
+        self.TestValue(32.2, self.Imperial[k][0], k, 0.1)
+        
+        k = 'bodyAngularRateWrtEi_deg_s_Roll'
+        self.TestValue(90.0, self.Imperial[k][0], k, 0.1)
+        
+        k = 'speedOfSound_ft_s'
+        self.TestValue(328.08, self.Imperial[k][0], k, 0.01)
+        
+        k = 'aero_bodyForce_lbf_X'
+        self.TestValue(20.23, self.Imperial[k][0], k, 0.01)
+        
+        k = 'trueAirspeed_nmi_h'
+        self.TestValue(291.58, self.Imperial[k][0], k, 0.01)
+        
+        self.Clear()
+        print("Number of RecData failed tests: ", self.FailCount)
     
 ###############################################################################
-class Simulation(Convert):
+class Simulation(SaveData):
     def __init__(self, daveFile):
         self.DaveFile = daveFile
         
@@ -1525,58 +1739,14 @@ class Simulation(Convert):
     InertiaMatrixInverse = Matrix3x3()
     
     aeroBodyForce = Vector3(0, 0, 0)
+    aeroBodyMoment = Vector3(0, 0, 0)
+    thrustBodyForce = Vector3(0, 0, 0)
     
-    # moment components
-    Ml = 0
-    Mm = 0
-    Mn = 0
-    
-    totalCoefficientOfLift = 0
-    totalCoefficientOfDrag = 0
-    
-    # define outputs
-    ImperialLabels = ['gePosition_ft_X', 'gePosition_ft_Y', 'gePosition_ft_Z', 
-                     'feVelocity_ft_s_X', 'feVelocity_ft_s_Y', 'feVelocity_ft_s_Z', 
-                     'altitudeMsl_ft', 'longitude_deg', 'latitude_deg', 'localGravity_ft_s2', 
-                     'eulerAngle_deg_Yaw', 'eulerAngle_deg_Pitch', 'eulerAngle_deg_Roll', 
-                     'bodyAngularRateWrtEi_deg_s_Roll', 'bodyAngularRateWrtEi_deg_s_Pitch', 
-                     'bodyAngularRateWrtEi_deg_s_Yaw', 
-                     'altitudeRateWrtMsl_ft_min', 'speedOfSound_ft_s', 'airDensity_slug_ft3', 
-                     'ambientPressure_lbf_ft2', 'ambientTemperature_dgR', 
-                     'aero_bodyForce_lbf_X', 'aero_bodyForce_lbf_Y', 'aero_bodyForce_lbf_Z', 
-                     'aero_bodyMoment_ftlbf_L', 'aero_bodyMoment_ftlbf_M', 'aero_bodyMoment_ftlbf_N', 
-                     'mach', 'dynamicPressure_lbf_ft2', 'trueAirspeed_nmi_h']
-    
-    ImperialData = {}
-    
-    time = []
-    eiPosition_m_X = []
-    eiPosition_m_Y = []
-    eiPosition_m_Z = []
-    gePosition_m_X = []
-    gePosition_m_Y = []
-    gePosition_m_Z = []
-    feVelocity_m_s_X = []
-    feVelocity_m_s_Y = []
-    feVelocity_m_s_Z = []
-    altitudeMsl_m = []
-    longitude_rad = []
-    latitude_rad = []
-    localGravity_m_s2 = []
-    eulerAngle_Roll = []
-    eulerAngle_Pitch = []
-    eulerAngle_Yaw = []
-    bodyAngularRateWrtEi_rad_s_Roll = []
-    bodyAngularRateWrtEi_rad_s_Pitch = []
-    bodyAngularRateWrtEi_rad_s_Yaw = []
-    trueAirspeed = []
-    aeroBodyForce_N_X = []
-    aeroBodyForce_N_Y = []
-    aeroBodyForce_N_Z = []
-    speedOfSound = []
+    RecData = SaveData()
+    RecData.Init()
         
     def AdvanceTime(self):
-        self.time.append(self.Time)
+        self.RecData.AddTime(self.Time)
         self.Time += self.timeStep
         
     def AddAeroModelInput(self, input):
@@ -1590,80 +1760,35 @@ class Simulation(Convert):
     def Clear(self):
         self.Time = 0.0
         self.Data.clear()
-        self.ImperialData.clear()
+        self.RecData.Clear()
         self.AeroModelInput.clear()
-        
-        self.time.clear()
-        self.eiPosition_m_X.clear()
-        self.eiPosition_m_Y.clear()
-        self.eiPosition_m_Z.clear()
-        self.gePosition_m_X.clear()
-        self.gePosition_m_Y.clear()
-        self.gePosition_m_Z.clear()
-        self.feVelocity_m_s_X.clear()
-        self.feVelocity_m_s_Y.clear()
-        self.feVelocity_m_s_Z.clear()
-        self.altitudeMsl_m.clear()
-        self.longitude_rad.clear()
-        self.latitude_rad.clear()
-        self.localGravity_m_s2.clear()
-        
-        self.eulerAngle_Roll.clear()
-        self.eulerAngle_Pitch.clear()
-        self.eulerAngle_Yaw.clear()
-        
-        self.bodyAngularRateWrtEi_rad_s_Roll.clear()
-        self.bodyAngularRateWrtEi_rad_s_Pitch.clear()
-        self.bodyAngularRateWrtEi_rad_s_Yaw.clear()
     
-        self.trueAirspeed.clear()
-        self.speedOfSound.clear()
+    def CalcAeroBodyForces(self, qS):
+        # compute the aero forces in the body frame
+        self.aeroBodyForce.X = ( 
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X") 
+        )
+        self.aeroBodyForce.Y = (
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y") 
+        )
+        self.aeroBodyForce.Z = (
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z") 
+        )
         
-        self.aeroBodyForce_N_X.clear()
-        self.aeroBodyForce_N_Y.clear()
-        self.aeroBodyForce_N_Z.clear()
+        # save the aero force data
+        self.RecData.Add('aero_bodyForce_N_X', self.aeroBodyForce.X)
+        self.RecData.Add('aero_bodyForce_N_Y', self.aeroBodyForce.Y)
+        self.RecData.Add('aero_bodyForce_N_Z', self.aeroBodyForce.Z)
         
-    def GenerateImperialUnits(self):
-        """Generate data in Imperial units.
+    def CalcAeroBodyMoments(self, qS):
+        # calculate the dimensional aero moments
+        self.aeroBodyMoment.X = (qS * self.ReferenceWingSpan  
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
+        self.aeroBodyMoment.Y = (qS * self.ReferenceWingChord 
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
+        self.aeroBodyMoment.Z = (qS * self.ReferenceWingSpan  
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
         
-        For comparison the NESC data.
-        """
-        self.ImperialData.clear()
-        for key in self.ImperialLabels:
-            self.ImperialData[key] = []
-        
-        # TODO: extract units from name
-        self.ImperialData['time'] = self.time
-        self.ImperialData['gePosition_ft_X'] = self.ToImperial(self.gePosition_m_X,"m")
-        self.ImperialData['gePosition_ft_Y'] = self.ToImperial(self.gePosition_m_Y,"m")
-        self.ImperialData['gePosition_ft_Z'] = self.ToImperial(self.gePosition_m_Z,"m")
-        self.ImperialData['feVelocity_m_s_X'] = self.ToImperial(self.feVelocity_m_s_X,"m")
-        self.ImperialData['feVelocity_m_s_Y'] = self.ToImperial(self.feVelocity_m_s_Y,"m")
-        self.ImperialData['feVelocity_m_s_Z'] = self.ToImperial(self.feVelocity_m_s_Z,"m")
-        
-        self.ImperialData['altitudeMsl_ft'] = self.ToImperial(self.altitudeMsl_m,"m")
-        self.ImperialData['longitude_deg'] = self.ToImperial(self.longitude_rad,"rad")
-        self.ImperialData['latitude_deg'] = self.ToImperial(self.latitude_rad,"rad")
-        self.ImperialData['localGravity_ft_s2'] = self.ToImperial(self.localGravity_m_s2,"m")
-        
-        self.ImperialData['eulerAngle_deg_Roll'] = self.ToImperial(self.eulerAngle_Roll,"rad")
-        self.ImperialData['eulerAngle_deg_Pitch'] = self.ToImperial(self.eulerAngle_Pitch,"rad")
-        self.ImperialData['eulerAngle_deg_Yaw'] = self.ToImperial(self.eulerAngle_Yaw,"rad")
-        
-        self.ImperialData['bodyAngularRateWrtEi_deg_s_Roll'] = \
-            self.ToImperial(self.bodyAngularRateWrtEi_rad_s_Roll,"rad")
-        self.ImperialData['bodyAngularRateWrtEi_deg_s_Pitch'] = \
-            self.ToImperial(self.bodyAngularRateWrtEi_rad_s_Pitch,"rad")
-        self.ImperialData['bodyAngularRateWrtEi_deg_s_Yaw'] = \
-            self.ToImperial(self.bodyAngularRateWrtEi_rad_s_Yaw,"rad")
-        
-        self.ImperialData['trueAirspeed_nmi_h'] = self.ToImperial(self.trueAirspeed,"m_s")
-        self.ImperialData['speedOfSound_ft_s'] = self.ToImperial(self.speedOfSound,"m")
-        
-        self.ImperialData['aero_bodyForce_lbf_X'] = self.ToImperial(self.aeroBodyForce_N_X,"N")
-        self.ImperialData['aero_bodyForce_lbf_Y'] = self.ToImperial(self.aeroBodyForce_N_Y,"N")
-        self.ImperialData['aero_bodyForce_lbf_Z'] = self.ToImperial(self.aeroBodyForce_N_Z,"N")
-     
     def NormalizeAngle(self, value, lower, upper):
         """Returns a value between the range lower and upper.
         
@@ -1693,6 +1818,7 @@ class Simulation(Convert):
         
     def ResetSimulation(self, ic):
         self.Clear()
+        self.RecData.Init()
     
         self.AeroModel.LoadDml(self.DaveFile, False)
         
@@ -1710,9 +1836,6 @@ class Simulation(Convert):
         self.ReferenceWingChord = self.SetValue("referenceWingChord")
         self.ReferenceWingArea = self.SetValue("referenceWingArea")
         
-        self.totalCoefficientOfLift = self.SetValue("totalCoefficientOfLift")
-        self.totalCoefficientOfDrag = self.SetValue("totalCoefficientOfDrag")
-
         self.AeroModel.Set("aeroBodyForceCoefficient_X")
         self.AeroModel.Set("aeroBodyForceCoefficient_Y")
         self.AeroModel.Set("aeroBodyForceCoefficient_Z")
@@ -1769,10 +1892,6 @@ class Simulation(Convert):
         self.gvJz = self.InertiaMatrix.A33
         self.gvJxz = self.InertiaMatrix.A13
         self.Gamma = (self.gvJx*self.gvJz) - (self.gvJxz*self.gvJxz)
-        
-        self.Ml = 0
-        self.Mm = 0
-        self.Mn = 0
     
     def Reset(self, ic):
         pass
@@ -1810,7 +1929,8 @@ class FlatEarth(Simulation):
     Vehicle must be symmetric about the x body axis.  Vehicle pitch must stay 
     below $90^\circ$.
 
-    <u>Force Equations</u>  
+    Force Equations
+    ---------------
     $\dot{U} = RV - QW - g_D \, \sin \theta + \frac{X_A + X_T}{m}$  
     $\dot{V} = PW - RU + g_D \, \sin \phi \, \cos \theta + \frac{Y_A + Y_T}{m}$  
     $\dot{W} = QU - PV + g_D \, \cos \phi \, \cos \theta + \frac{Z_A + Z_T}{m}$  
@@ -1836,7 +1956,8 @@ class FlatEarth(Simulation):
     \end{bmatrix}$  
     $R_{b/n} = [R_{n/b}]^T$  
 
-    <u>Kinematic equations</u>   
+    Kinematic equations
+    -------------------
     $\dot{\phi} = P + \tan \theta \, (Q \sin \phi + R \cos \phi)$  
     $\dot{\theta} = Q \cos \phi - R \sin \phi$  
     $\dot{\psi} = (Q \sin \phi + R \cos \phi) \, / \, \cos \theta$  
@@ -1848,7 +1969,8 @@ class FlatEarth(Simulation):
     0 & \sin \phi / \cos \theta & \cos \phi / \cos \theta
     \end{pmatrix}$  
 
-    <u>Moment Equations</u>  
+    Moment Equations
+    ----------------
     $\Gamma \dot{P} = J_{xz} [J_x - J_y + J_z]PQ - [J_z(J_z - J_y) + J^2_{xz}]QR + l J_z + n J_{xz}$  
     $J_y \dot{Q} = (J_z - J_x)PR - J_{xz}(P^2 - R^2) + m$  
     $\Gamma \dot{R} = [(J_x - J_y)J_x + J^2_{xz}]PQ - J_{xz}[J_x - J_y + J_z]QR + l J_{xz} n J_x$  
@@ -1856,7 +1978,8 @@ class FlatEarth(Simulation):
     In vector form,  
     $\dot{\omega^b_{b/i}} = J^{-1}(M^b - \omega^b_{b/i} J \omega^b_{b/i} )$
 
-    <u>Navigation Equations</u>  
+    Navigation Equations
+    --------------------
     $\dot{p_N} = U c\theta c\psi + V(-c\phi s\psi + s\phi s\theta c\psi) 
     + W(s\phi s\psi + c\phi s\theta c\psi)$  
     $\dot{p_E} = U c\theta s\psi + V(c\phi c\psi + s\phi s\theta s\psi)
@@ -1871,7 +1994,7 @@ class FlatEarth(Simulation):
     Planet = Earth()
     
     # Integrator
-    Integrator = ppIntegrator()
+    Integrator = Integrator()
     
     # state values
     X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1896,16 +2019,6 @@ class FlatEarth(Simulation):
     Ei = 10
     Zi = 11
     
-    # aerodynamic forces in body frame
-    Xa = 0
-    Ya = 0
-    Za = 0
-    
-    # thrust forces in body frame
-    Xt = 0
-    Yt = 0
-    Zt = 0
-    
     def Udot(self, state):
         V = state[self.Vi]
         W = state[self.Wi]
@@ -1914,7 +2027,7 @@ class FlatEarth(Simulation):
         sinθ = math.sin(state[self.θi])
         
         assert self.mass != 0.0, "Udot mass is 0"
-        value =  R*V - Q*W - self.gD*sinθ + (self.Xa + self.Xt) / self.mass
+        value =  R*V - Q*W - self.gD*sinθ + (self.aeroBodyForce.X + self.thrustBodyForce.X) / self.mass
         return value
     
     def Vdot(self, state):
@@ -1926,7 +2039,7 @@ class FlatEarth(Simulation):
         cosθ = math.cos(state[self.θi])
         
         assert self.mass != 0.0, "Vdot mass is 0"
-        value = -R*U + P*W + self.gD*sinϕ*cosθ + (self.Ya + self.Yt) / self.mass
+        value = -R*U + P*W + self.gD*sinϕ*cosθ + (self.aeroBodyForce.Y + self.thrustBodyForce.Y) / self.mass
         return value
     
     def Wdot(self, state):
@@ -1938,7 +2051,7 @@ class FlatEarth(Simulation):
         cosθ = math.cos(state[self.θi])
         
         assert self.mass != 0.0, "Wdot mass is 0"
-        value =  Q*U - P*V + self.gD*cosϕ*cosθ + (self.Za + self.Zt) / self.mass
+        value =  Q*U - P*V + self.gD*cosϕ*cosθ + (self.aeroBodyForce.Z + self.thrustBodyForce.Z) / self.mass
         return value
     
     def ϕdot(self, state):
@@ -1982,8 +2095,8 @@ class FlatEarth(Simulation):
         Jy = self.gvJy
         Jz = self.gvJz
         Jxz = self.gvJxz
-        l = self.Ml
-        n = self.Mn
+        l = self.aeroBodyMoment.X
+        n = self.aeroBodyMoment.Z
         
         assert self.Gamma != 0.0, "Pdot Gamma is 0"
         value = (Jxz * (Jx - Jy + Jz)*P*Q - (Jz*(Jz - Jy) + Jxz*Jxz)*Q*R + Jz*l + Jxz*n) / self.Gamma
@@ -1997,7 +2110,7 @@ class FlatEarth(Simulation):
         Jy = self.gvJy
         Jz = self.gvJz
         Jxz = self.gvJxz
-        m = self.Mm
+        m = self.aeroBodyMoment.Y
 
         assert Jy != 0.0, "Qdot Jy is 0"
         value = ((Jz - Jx)*P*R - Jxz*(P*P - R*R) + m) / Jy
@@ -2011,8 +2124,8 @@ class FlatEarth(Simulation):
         Jy = self.gvJy
         Jz = self.gvJz
         Jxz = self.gvJxz
-        l = self.Ml
-        n = self.Mn
+        l = self.aeroBodyMoment.X
+        n = self.aeroBodyMoment.Z
         
         assert self.Gamma != 0.0, "Pdot Gamma is 0"
         value = (((Jx - Jy)*Jx + Jxz*Jxz)*P*Q - Jxz*(Jx - Jy + Jz)*Q*R + Jxz*l + Jx*n) / self.Gamma
@@ -2086,22 +2199,14 @@ class FlatEarth(Simulation):
         self.X[self.Ei] = self.Position.Y
         self.X[self.Zi] = self.SetValue("altitudeMsl")
         
-        self.Xa = 0
-        self.Ya = 0
-        self.Za = 0
-        
-        self.Xt = 0
-        self.Yt = 0
-        self.Zt = 0
-        
     def Operate(self):
         # save output data
-        self.localGravity_m_s2.append(self.gD)
-        self.altitudeMsl_m.append(self.X[self.Zi])
-        self.eulerAngle_Roll.append(self.X[self.ϕi])
-        self.eulerAngle_Pitch.append(self.X[self.θi])
-        self.eulerAngle_Yaw.append( self.NormalizeAngle(self.X[self.ψi],-math.pi,math.pi) )
-        self.trueAirspeed.append(self.TrueAirspeed)
+        self.RecData.Add('localGravity_m_s2', self.gD)
+        self.RecData.Add('altitudeMsl_m', self.X[self.Zi])
+        self.RecData.Add('eulerAngle_rad_Roll', self.X[self.ϕi])
+        self.RecData.Add('eulerAngle_rad_Pitch', self.X[self.θi])
+        self.RecData.Add('eulerAngle_rad_Yaw', self.NormalizeAngle(self.X[self.ψi],-math.pi,math.pi))
+        self.RecData.Add('trueAirspeed_m_s', self.TrueAirspeed)
         
         # integrate the equations
         self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
@@ -2115,12 +2220,9 @@ class FlatEarth(Simulation):
         self.TrueAirspeed = math.sqrt(u*u + v*v + w*w)
         
         # get dynamic pressure:  q = 1/2 rho v^2
-        density, temperature, pressure, speedOfSoundMps = (
-            self.Planet.AirData(self.X[self.Zi]) )
-        self.speedOfSound.append(speedOfSoundMps)
-        
-        #density = self.Planet.AirDensity(self.X[self.Zi])
-        dynamicPressure = 0.5 * density * (self.TrueAirspeed)**2
+        dynamicPressure = (
+            self.Planet.DynamicPressure(self.X[self.Zi], self.TrueAirspeed)
+        )
 
         # Get the qS factor for getting dimensional forces and moments
         qS = dynamicPressure * self.ReferenceWingArea
@@ -2134,17 +2236,10 @@ class FlatEarth(Simulation):
         self.EvaluateAeroModel()
         
         # Aero forces (Newtons) body
-        self.Xa = qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X")
-        self.Ya = qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y")
-        self.Za = qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z")
+        self.CalcAeroBodyForces(qS)
         
         # Aero moments
-        self.Ml = (qS * self.ReferenceWingSpan
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
-        self.Mm = (qS * self.ReferenceWingChord 
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
-        self.Mn = (qS * self.ReferenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
+        self.CalcAeroBodyMoments(qS)
         
 ###############################################################################
 class slEarthSim(Simulation):
@@ -2205,7 +2300,7 @@ class slEarthSim(Simulation):
     Gy = 0
     Gz = 0
     
-    Integrator = ppIntegrator()
+    Integrator = Integrator()
     
     # state values: quaternion, position, acceleration and angular rates
     X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -2268,8 +2363,6 @@ class slEarthSim(Simulation):
         w = self.Planet.RotationRate
         assert self.TotalMass != 0, "VxDot mass is 0"
         ax = self.QforceEcf.X / self.TotalMass
-        #if ax != 0:
-        #    print("ax:",ax)
         xDot = ax + 2.0 * w * state[self.Vyi] + self.Gx + state[self.Xi] * w**2
         return xDot
     def VyDot(self, state):
@@ -2292,9 +2385,9 @@ class slEarthSim(Simulation):
         Jz = self.gvJz
         Jxz = self.gvJxz
         Gamma = self.Gamma
-        l = self.Ml
-        m = self.Mm
-        n = self.Mn
+        l = self.aeroBodyMoment.X
+        m = self.aeroBodyMoment.Y
+        n = self.aeroBodyMoment.Z
         return P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n
     def Pdot(self, state):
         P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n = self.Wstate(state)
@@ -2386,22 +2479,19 @@ class slEarthSim(Simulation):
         qeiPosition = self.Qi2e * qgePosition * ~self.Qi2e
         
         # save output data
-        self.altitudeMsl_m.append(self.Planet.Altitude)
-        self.latitude_rad.append(self.Planet.Latitude)
-        self.longitude_rad.append(self.Planet.Longitude)
-        self.gePosition_m_X.append(self.X[self.Xi])
-        self.gePosition_m_Y.append(self.X[self.Yi])
-        self.gePosition_m_Z.append(self.X[self.Zi])
-        
-        self.eulerAngle_Roll.append(roll)
-        self.eulerAngle_Pitch.append(pitch)
-        self.eulerAngle_Yaw.append(yaw)
-        
-        self.trueAirspeed.append(self.TrueAirspeed)
-
-        self.eiPosition_m_X.append(qeiPosition.X)
-        self.eiPosition_m_Y.append(qeiPosition.Y)
-        self.eiPosition_m_Z.append(qeiPosition.Z)
+        self.RecData.Add('altitudeMsl_m', self.Planet.Altitude)
+        self.RecData.Add('latitude_rad', self.Planet.Latitude)
+        self.RecData.Add('longitude_rad', self.Planet.Longitude)
+        self.RecData.Add('gePosition_m_X', self.X[self.Xi])
+        self.RecData.Add('gePosition_m_Y', self.X[self.Yi])
+        self.RecData.Add('gePosition_m_Z', self.X[self.Zi])
+        self.RecData.Add('eulerAngle_rad_Roll', roll)
+        self.RecData.Add('eulerAngle_rad_Pitch', pitch)
+        self.RecData.Add('eulerAngle_rad_Yaw', yaw)
+        self.RecData.Add('trueAirspeed_m_s', self.TrueAirspeed)
+        self.RecData.Add('eiPosition_m_X', qeiPosition.X)
+        self.RecData.Add('eiPosition_m_Y', qeiPosition.Y)
+        self.RecData.Add('eiPosition_m_Z', qeiPosition.Z)
         
         # get earth rotation in the body frame
         wEarthFrd = ~self.Qe2b * self.EarthRotation * self.Qe2b
@@ -2416,9 +2506,8 @@ class slEarthSim(Simulation):
         z = self.X[self.Zi]
         [self.Gx, self.Gy, self.Gz] = self.Planet.GravityJ2( x, y, z )
         g = Vector3(self.Gx, self.Gy, self.Gz)
-        self.localGravity_m_s2.append(g.Magnitude())
+        self.RecData.Add('localGravity_m_s2', g.Magnitude())
 
-        
         # integrate the equations
         self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
         
@@ -2441,38 +2530,22 @@ class slEarthSim(Simulation):
         self.EvaluateAeroModel()
         
         # get dynamic pressure:  q = 1/2 rho v^2
-        density, temperature, pressure, speedOfSoundMps = (
-            self.Planet.AirData(self.Planet.Altitude) )
-        self.speedOfSound.append(speedOfSoundMps)
-        #density = self.Planet.AirDensity(self.Planet.Altitude)
-        dynamicPressure = 0.5 * density * (self.TrueAirspeed)**2
+        dynamicPressure = (
+            self.Planet.DynamicPressure(self.Planet.Altitude, self.TrueAirspeed)
+        )
+        self.RecData.Add('speedOfSound_m_s', self.Planet.speedOfSoundMps)
 
         # Get the qS factor for getting dimensional forces and moments
         qS = dynamicPressure * self.ReferenceWingArea
         
         # compute the aero forces in the body frame
-        self.aeroBodyForce.X = (qS 
-            * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X") )
-        self.aeroBodyForce.Y = (qS
-            * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y") )
-        self.aeroBodyForce.Z = (qS
-            * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z") )
-        
-        # save the aero force data
-        self.aeroBodyForce_N_X.append(self.aeroBodyForce.X)
-        self.aeroBodyForce_N_Y.append(self.aeroBodyForce.Y)
-        self.aeroBodyForce_N_Z.append(self.aeroBodyForce.Z)
+        self.CalcAeroBodyForces(qS)
         
         # rotate body forces to the ECEF frame
         self.QforceEcf = self.Qe2b * self.aeroBodyForce * ~self.Qe2b
         
         # calculate the dimensional aero moments
-        self.Ml = (qS * self.ReferenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
-        self.Mm = (qS * self.ReferenceWingChord 
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
-        self.Mn = (qS * self.ReferenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
+        self.CalcAeroBodyMoments(qS)
         
         # update the latitude, longitude and altitude from ECEF X, Y, Z position
         self.Planet.PcpfToLlaZhu(self.X[self.Xi], self.X[self.Yi], self.X[self.Zi])
