@@ -1,62 +1,7 @@
-import logging
 import math
 from . import daveML
 
-###############################################################################
-class UnitTest:
-    """A unit test class.  
-    
-    A base class that other classes derive for unit testing.
-    
-    Attributes:
-        FailCount: The number of failed tests.
-        ClassName: A string to identify the class performing the unit test.
-    """
-
-    FailCount = 0
-    ClassName = " "
-    
-    def TestValue(self, actualValue, testValue, label, tol):
-        """Tests whether two values match within a tolerance.  
-        
-        A string label is passed to identify the test. An error via logging is
-        printed if the test fails.
-        
-        Example:
-            TestValue( 2, 1+1, "SimpleAdd", 1e-2)
-
-        Args:
-            actualValue: The expected value from doing the test.
-            testValue: The computed value from doing the test.
-            label: A label to identify the specific test.
-            tol: The tolerance for the actual and test values to match.
-        """
-        if abs(actualValue - testValue) > tol:
-            self.FailCount += 1
-            labelStr = "[" + self.ClassName + "]" + label
-            actStr = labelStr + ": Test failed. Expected: {};".format(actualValue)
-            calStr = " Calculated: {}".format(testValue)
-            logging.error(actStr+calStr)
-            
-    def TestArray(self, arrayData):
-        """Performs multiple tests on an array of data. 
-        
-        Example:
-            Create a data array containing the desired value, the test value,
-            the identity string, and the tolerance.
-            
-            checkData = (
-              (  4.0, 2.0*2.0, "MultipleTest", 1e-6),
-              ( 16.0, 8.0+8.0, "Add-Example",  1e-5)
-            )
-            
-            TestArray(checkData)
-        """
-        for d in arrayData:
-            self.TestValue( d[0], d[1], d[2], d[3] )
-
-###############################################################################
-class Convert(UnitTest):
+class Convert:
     """A class for performing unit conversions.
     
     | unit           | abbreviation |
@@ -82,310 +27,201 @@ class Convert(UnitTest):
     | knot (nmi/hr)  | kt           |
     | nondimensional | nd           |
 
+    Usage:
+        # convert 72.876 knots to feet per second
+        convert = Convert()
+        speedInFps = convert.units([72.876,"kt"],"fps")
+        
     Attributes:
-        KnotToFps: scale factor to convert knots to feet per second.
-        FpsToKnot: scale factor to convert feet per second to knots.
-        MinToSec: scale factor to convert minutes to seconds.
-        FeetToMeter: scale factor to convert feet to meters.
-        MeterToFeet: scale factor to convert meters to feet.
-        NmToFeet: scale factor to convert nautical miles to feet.
-        FeetToNm: scale factor to convert feet to nautical miles.
-        SqMeterToSqFeet: scale factor to convert square meters to square feet.
-        SqFeetToSqMeter: scale factor to convert square feet to square meters.
-        PoundToNewton: scale factor to convert pounds to Newtons.
-        NewtonToPound: scale factor to convert Newtons to pounds.
-        SlugToKg: scale factor to convert slugs to kilograms.
-        KgToSlug: scale factor to convert kilograms to slugs.
-        Slugft2ToKgm2: scale factor to convert slug-ft2 to kg-m2.
-        Kgm2ToSlugft2: scale factor to convert kg-m2 to slug-ft2.
-        DegToRad: scale factor to convert degrees to radians.
-        RadToDeg: scale factor to convert radians to degrees.
-        MpsToKt: scale factor to convert meters per second to knots.
-        KtToMps: scale factor to convert knots to meters per second.
+        KNOT_TO_FPS: scale factor to convert knots to feet per second.
+        FPS_TO_KNOT: scale factor to convert feet per second to knots.
+        MIN_TO_SEC: scale factor to convert minutes to seconds.
+        FEET_TO_METER: scale factor to convert feet to meters.
+        METER_TO_FEET: scale factor to convert meters to feet.
+        NM_TO_FEET: scale factor to convert nautical miles to feet.
+        FEET_TO_NM: scale factor to convert feet to nautical miles.
+        METER2_TO_FEET2: scale factor to convert square meters to square feet.
+        FEET2_TO_METER2: scale factor to convert square feet to square meters.
+        LB_TO_NEWTON: scale factor to convert pounds to Newtons.
+        NEWTON_TO_LB: scale factor to convert Newtons to pounds.
+        SLUG_TO_KG: scale factor to convert slugs to kilograms.
+        KG_TO_SLUG: scale factor to convert kilograms to slugs.
+        SLUGFT2_TO_KGM2: scale factor to convert slug-ft2 to kg-m2.
+        KGM2_TO_SLUGFT2: scale factor to convert kg-m2 to slug-ft2.
+        DEGREE_TO_RADIAN: scale factor to convert degrees to radians.
+        RADIAN_TO_DEGREE: scale factor to convert radians to degrees.
+        MPS_TO_KT: scale factor to convert meters per second to knots.
+        KT_TO_MPS: scale factor to convert knots to meters per second.
     """
-    KnotToFps = 1.6878097112860893
-    FpsToKnot = (1.0 / KnotToFps)
-    MinToSec = 60.0
-    FeetToMeter = 0.3048
-    MeterToFeet = (1.0 / FeetToMeter)
-    NmToFeet = 6076.115485564304
-    FeetToNm = (1.0 / NmToFeet)
-    SqMeterToSqFeet = (MeterToFeet*MeterToFeet)
-    SqFeetToSqMeter = 1.0 / SqMeterToSqFeet
-    PoundToNewton = 4.4482216152605
-    NewtonToPound = 1.0 / PoundToNewton
-    SlugToKg = 14.593902937
-    KgToSlug = 1.0 / SlugToKg
-    Slugft2ToKgm2 = 1.3558179618926
-    Kgm2ToSlugft2 = 1.0 / Slugft2ToKgm2
-    DegToRad = math.radians(1.0)
-    RadToDeg = math.degrees(1.0)
-    MpsToKt = 1.94384
-    KtToMps = 0.5144444
+    _KNOT_TO_FPS = 1.6878097112860893
+    _FPS_TO_KNOT = (1.0 / _KNOT_TO_FPS)
+    _MIN_TO_SEC = 60.0
+    _FEET_TO_METER = 0.3048
+    _METER_TO_FEET = (1.0 / _FEET_TO_METER)
+    _NMI_TO_FEET = 6076.115485564304
+    _FEET_TO_NMI = (1.0 / _NMI_TO_FEET)
+    _METER2_TO_FEET2 = (_METER_TO_FEET * _METER_TO_FEET)
+    _FEET2_TO_METER2 = 1.0 / _METER2_TO_FEET2
+    _LB_TO_NEWTON = 4.4482216152605
+    _NEWTON_TO_LB = 1.0 / _LB_TO_NEWTON
+    _SLUG_TO_KG = 14.593902937
+    _KG_TO_SLUG = 1.0 / _SLUG_TO_KG
+    _SLUGFT2_TO_KGM2 = 1.3558179618926
+    _KGM2_TO_SLUGFT2 = 1.0 / _SLUGFT2_TO_KGM2
+    _DEGREE_TO_RADIAN = math.radians(1.0)
+    _RADIAN_TO_DEGREE = math.degrees(1.0)
+    _MPS_TO_KT = 1.943844
+    _KT_TO_MPS = 1.0 / _MPS_TO_KT
     
-    ImperialToSI = {
-        "lbf": PoundToNewton,
-        "slug": SlugToKg,
-        "slugft2": Slugft2ToKgm2,
-        "ft": FeetToMeter,
-        "ft_s": FeetToMeter,
-        "ft2": SqFeetToSqMeter,
-        "deg": DegToRad,
-        "deg_s": DegToRad,
-        "km": 1000.0,
-        "km_s": 1000.0,
-        "kt": KtToMps,
-        "m": 1,
-        "m2": 1,
-        "nd": 1
+    _FromTo = {
+        "kt->fps": _KNOT_TO_FPS,
+        "fps->kt": _FPS_TO_KNOT,
+        "ft->m": _FEET_TO_METER,
+        "m->ft": _METER_TO_FEET,
+        "nmi->ft": _NMI_TO_FEET,
+        "ft->nmi": _FEET_TO_NMI,
+        "ft_s->m_s": _FEET_TO_METER,
+        "m_s->ft_s": _METER_TO_FEET,
+        "ft2->m2": _FEET2_TO_METER2,
+        "m2->ft2": _METER2_TO_FEET2,
+        "min->s": _MIN_TO_SEC,
+        "slug->kg": _SLUG_TO_KG,
+        "kg->slug": _KG_TO_SLUG,
+        "slugft2->kgm2": _SLUGFT2_TO_KGM2,
+        "kgm2->slugft2": _KGM2_TO_SLUGFT2,
+        "deg->rad": _DEGREE_TO_RADIAN,
+        "deg_s->rad_s": _DEGREE_TO_RADIAN,
+        "rad->deg": _RADIAN_TO_DEGREE,
+        "rad_s->deg_s": _RADIAN_TO_DEGREE,
+        "m_s2->ft_s2": _METER_TO_FEET,
+        "n->lbf": _NEWTON_TO_LB,
+        "lbf->n": _LB_TO_NEWTON,
+        "km->m": 1000.0,
+        "km_s->m_s": 1000.0,
+        "m_s->nmi_h": _MPS_TO_KT,
+        "m_s->kt": _MPS_TO_KT,
+        "nmi_h->m_s": _KT_TO_MPS,
+        "kt->m_s": _KT_TO_MPS
     }
     
-    SiToImperial = {
-        "m": MeterToFeet,
-        "m2": SqMeterToSqFeet,
-        "rad": RadToDeg,
-        "rad_s": RadToDeg,
-        "m_s": MpsToKt,
-        "n": NewtonToPound,
-        "kg": KgToSlug,
-        "kgm2": Kgm2ToSlugft2,
-        "s": 1,
-        "m->ft": MeterToFeet,
-        "m_s->ft_s": MeterToFeet,
-        "rad->deg": RadToDeg,
-        "rad_s->deg_s": RadToDeg,
-        "m_s2->ft_s2": MeterToFeet,
-        "n->lbf": NewtonToPound,
-        "m_s->nmi_h": MpsToKt
+    _ToSI = {
+        "lbf": "n",
+        "slug": "kg",
+        "slugft2": "kgm2",
+        "ft": "m",
+        "ft_s": "m_s",
+        "ft2": "m2",
+        "deg": "rad",
+        "deg_s": "rad_s",
+        "km": "m",
+        "km_s": "m_s",
+        "kt": "m_s",
+        "nmi_h": "m_s"
     }
-    
-    def LogWarn(self, inUnit):
-        """Log a warning for unrecognized unit.
+        
+    def units(self, value, toUnits):
+        """Convert units from unit to new units.
         
         Args:
-            inUnit: unit string value not recognized.
+            value: an array of a value and units (ex. [24, "ft"])
+            toUnits: unit string  to convert value to
         """
-        warnStr = units + " not recognized in ppConvert.  No conversion done."
-        logging.warning(warnStr)
+        _units = value[1].lower() + '->' + toUnits.lower()
+        _factor = 1
+        if _units in self._FromTo:
+            _factor = self._FromTo[_units]
+        else:
+            raise ValueError(_units + " not a recognized unit conversion.")
+        return _factor*value[0]
         
-    def SetIC(self, inIC):
-        """Convert initial conditions to SI.
-        
-        Args:
-            inIC: initial conditions.
-        """
-        print("========= SetIC ==============")
-        icData = {}
-        for key,value in inIC.items():
-            units = value[1].lower()
-            factor = 1
-            if units in self.ImperialToSI:
-                factor = self.ImperialToSI[units]
-            elif units not in self.SiToImperial:
-                self.LogWarn(units)
-            icData[key] = factor * value[0]
-        return icData
+    def to_si(self, value):
+        _units = value[1].lower()
+        _new_value = value[0]
+        if _units in self._ToSI:
+            _to_units = self._ToSI[_units]
+            _new_value = self.units(value, _to_units)
+        return _new_value
     
-    def ToSI(self, value, inUnits):
-        """Convert a value from Imperial to SI units.
-        
-        Args:
-            value: Imperial value to convert.
-            inUnits: string value of the Imperial unit value.
-            
-        Returns:
-            SI value.
-        """
-        units = inUnits.lower()
-        factor = 1
-        if units in self.ImperialToSI:
-            factor = self.ImperialToSI[units]
-        elif units not in self.SiToImperial:
-            self.LogWarn(inUnits)
-        return value*factor
-    
-    def ToImperial(self, value, inUnits):
-        """Convert a value from SI to Imperial units.
-        
-        Args:
-            value: SI value to convert.
-            inUnits: string value of the SI unit value.
-            
-        Returns:
-            Imperial value.
-        """
-        units = inUnits.lower()
-        factor = 1
-        if units in self.SiToImperial:
-            factor = self.SiToImperial[units]
-        elif units in self.ImperialToSI:
-            self.LogWarn(inUnits)
-            
-        convertedValue = []
-        for v in value:
-            convertedValue.append(v*factor)
-        return convertedValue
-    
-    def UnitTest(self):
-        """Perform tests to check unit conversions."""
-        self.ClassName = "Convert"
-        checkData = (
-            (     123.0,         72.876*self.KnotToFps, "KnotToFps", 1e-3),
-            (      78.8,          133.0*self.FpsToKnot, "FpsToKnot", 1e-3),
-            (     300.0,             5.0*self.MinToSec, "MinToSec", 1e-12),
-            (  395.9352,       1299.0*self.FeetToMeter, "FeetToMeter", 1e-4),
-            (    1299.0,     395.9352*self.MeterToFeet, "MeterToFeet", 1e-4),
-            ( 3967703.4,           653.0*self.NmToFeet, "NmToFeet", 0.1),
-            (     653.0,       3967703.4*self.FeetToNm, "FeetToNm", 0.1),
-            ( 10.763910,          self.SqMeterToSqFeet, "SqMeterToSqFeet", 1e-6),
-            (      13.0,    2.92252*self.PoundToNewton, "PoundToNewton", 1e-4),
-            (       1.0, 0.73756215*self.Slugft2ToKgm2, "Slugft2ToKgm2", 1e-7),
-            (    54.864,        self.FeetToMeter*180.0, "FeetToMeters", 1e-4),
-            (1742.12598,        self.MeterToFeet*531.0, "MetersToFeet", 1e-5),
-            (  178.5596, self.SqFeetToSqMeter*1922.0, "SqFeetToSqMeters", 1e-4),
-            (   4412.64, self.PoundToNewton*992.0, "PoundsToNewtons", 0.01),
-            (21.6930872, self.Slugft2ToKgm2*16.0, "SlugFt2ToKgM2", 1e-6),
-            (161.0256, self.ToSI(36.2,"lbf"), "ToSI lbf->N", 1e-3),
-            (161.0256, self.ToSI(36.2,"LBf"), "ToSI lbf->N", 1e-3),
-            (105.7538001, self.ToSI(78.0,"slugft2"), "ToSI slugf2->kgm2", 1e-6),
-            (531.0, self.ToSI(1742.12598,"ft"), "ToSI f->m", 1e-5),
-            (9.7536, self.ToSI(32.0,"ft_s"), "ToSI fps-mps", 1e-4),
-            (140.6552, self.ToSI(1514,"ft2"), "ToSI f2-m2", 1e-4),
-            (math.pi, self.ToSI(180.0,"deg"), "ToSI deg->rad", 1e-6),
-            (0.25*math.pi, self.ToSI(45.0,"deg_s"), "ToSI dps->rps", 1e-6),
-            (93200, self.ToSI(93.2,"km"), "ToSI km->m", 1e-6),
-            (4221, self.ToSI(4.221,"km_s"), "ToSI km_s->m_s", 1e-6)
-        )
-        
-        self.TestArray(checkData)
-        
-        self.ClassName = "Convert IC"
-        icTest = {
-            "newtonTest": [36.2, "lbf"],
-            "inertiaTest": [78.0, "slugft2"],
-            "feetTest": [1742.12598, "ft"],
-            "fpsTest": [32.0, "ft_s"],
-            "ft2Test": [1514, "ft2"],
-            "degTest": [180, "deg"],
-            "dpsTest": [45.0, "deg_s"],
-            "kmTest": [93.2, "km"],
-            "kpsTest": [4.221, "km_s"]
-        }
-        icData = self.SetIC(icTest)
-        self.TestValue(161.0256, icData["newtonTest"], "lbf->N", 1e-3)
-        self.TestValue(105.7538001, icData["inertiaTest"], "slugf2->kgm2", 1e-6)
-        self.TestValue(531.0, icData["feetTest"], "f->m", 1e-5)
-        self.TestValue(9.7536, icData["fpsTest"], "fps-mps", 1e-4)
-        self.TestValue(140.6552, icData["ft2Test"], "f2-m2", 1e-4)
-        self.TestValue(math.pi, icData["degTest"], "deg->rad", 1e-6)
-        self.TestValue(0.25*math.pi, icData["dpsTest"], "dps->rps", 1e-6)
-        self.TestValue(93200, icData["kmTest"], "km->m", 1e-6)
-        self.TestValue(4221, icData["kpsTest"], "km_s->m_s", 1e-6)
-        
-        self.ClassName = "Convert ToImperial"
-        
-        fa = self.ToImperial([100, 1000],"m")
-        aa = self.ToImperial([100, 1000],"m2")
-        da = self.ToImperial([0.5*math.pi, math.pi],"rad")
-        dsa = self.ToImperial([1.5*math.pi],"rad_s")
-        ka = self.ToImperial([100, 1000],"m_s")
-        na = self.ToImperial([25, 250],"N")
-        sa = self.ToImperial([16, 160],"kg")
-        ga = self.ToImperial([59, 590],"kgm2")
-        
-        checkImperial = (
-            (328.084, fa[0], "m->ft", 1e-3),
-            (3280.84, fa[1], "m->ft", 1e-2),
-            (1076.39, aa[0], "m2->ft2", 1e-2),
-            (10763.9, aa[1], "m2->ft2", 0.1),
-            (   90.0, da[0], "rad->deg", 1e-6),
-            (  180.0, da[1], "rad->deg", 1e-6),
-            (  270.0, dsa[0], "rad_s->deg_s", 1e-6),
-            (194.384, ka[0], "m_s->knot", 1e-3),
-            (1943.84, ka[1], "m_s->knot", 1e-2),
-            (5.62022, na[0], "N->lbf", 1e-5),
-            (56.2022, na[1], "N->lbf", 1e-4),
-            (1.09635, sa[0], "kg->slug", 1e-5),
-            (10.9635, sa[1], "kg->slug", 1e-4),
-            (43.5161664, ga[0], "kgm2->slugft2", 1e-7),
-            (435.161664, ga[1], "kgm2->slugft2", 1e-6)
-        )
-        
-        self.TestArray(checkImperial)
-        
-        print("Number of Convert failed tests: ", self.FailCount)
-
 ###############################################################################
-class Planet(UnitTest):
+class BasePlanet():
     """A base class to describe planets and moons.  
     
     A base class that other classes derive for defining planet characteristics.
     
     Attributes:
-        GM: the gravity constant.
+        GM_m3_s2: the gravity constant.
         J2: gravity parameter.
-        Latitude: the Latitude position of the planet.
-        Longitude: the Longitude of the planet.
-        Altitude: the MSL altitude 
-        RotationRate: the rotational rate (rad/s) of the body.  East rotation 
-            is positive.
+        latitude_rad: the Latitude (radians) position of the planet.
+        longitude_rad: the Longitude (radians) of the planet.
+        altitudeMsl_m: the MSL altitude in meters
+        rotationRate_rad_s: the rotational rate (rad/s) of the body.  East 
+            rotation is positive.
         SemiMajor: the semi-major axis of the ellipsoid planet model.
         Flattening: the flatening parameter.
-        SemiMinor: the semi-minor axis of the ellipsoid planet model. 
+        semiMinor_m: the semi-minor axis of the ellipsoid planet model. 
             [Calculated]
-        Eccentricity: the eccentricity. [Calculated]
-        EccentricitySquared: the eccentricity squared. [Calculated]
+        eccentricity: the eccentricity. [Calculated]
+        eccentricitySquared: the eccentricity squared. [Calculated]
     """
     
-    GM = 0
+    GM_m3_s2 = 0
     J2 = 0
     
-    Latitude = 0
-    Longitude = 0
-    Altitude = 0
+    latitude_rad = 0
+    longitude_rad = 0
+    altitudeMsl_m = 0
     
-    RotationRate = 0
-    SemiMajor    = 0
-    Flattening   = 0
-    SemiMinor    = 0
-    Eccentricity = 0
-    EccentricitySquared = 0
+    fePosition_m_X = 0
+    fePosition_m_Y = 0
     
-    density = 0
-    temperature = 0
-    pressure = 0
-    speedOfSoundMps = 0
+    rotationAngle_rad = 0
+    rotationRate_rad_s = 0
+    semiMajor_m = 0
+    flattening = 0
+    semiMinor_m = 0
+    eccentricity = 0
+    eccentricitySquared = 0
     
-    def CalcSemiMinor(self):
+    rotationQ = None
+    bodyRotationQ = None
+    gravityV = None
+    
+    airDensity_kg_m3 = 0
+    temperature_dgK = 0
+    pressure_Pa = 0
+    speedOfSound_m_s = 0
+    trueAirspeed_m_s = 0
+    
+    def calculate_semi_minor(self):
         """Calculate the semi-minor axis based on semi-major and flattening 
         values.
         """
-        self.SemiMinor = self.SemiMajor * ( 1.0 - self.Flattening )
+        self.semiMinor_m = self.semiMajor_m * ( 1.0 - self.flattening )
     
-    def CalcEccentricity(self):
+    def calculate_eccentricity(self):
         """Calculate the eccentricity given the semi-major and semi-minor 
         axes.
         """
-        a = self.SemiMajor
-        b = self.SemiMinor
-        self.Eccentricity = (math.sqrt( a * a - b * b ) /  a)
-        self.EccentricitySquared = (self.Eccentricity) ** 2
+        a = self.semiMajor_m
+        b = self.semiMinor_m
+        self.eccentricity = (math.sqrt( a * a - b * b ) /  a)
+        self.eccentricitySquared = (self.eccentricity) ** 2
     
-    def LlaToPcpf(self):
+    def lla_to_ecef(self):
         """Convert geodetic to ECEF coordinates """
-        a  = self.SemiMajor
-        e2 = self.EccentricitySquared
-        sinLat = math.sin( self.Latitude )
+        a  = self.semiMajor_m
+        e2 = self.eccentricitySquared
+        sinLat = math.sin( self.latitude_rad )
         N = a / math.sqrt( 1.0 - (e2*sinLat*sinLat) )
 
-        cosLat = math.cos( self.Latitude )
-        # set the planet centered, planet fixed (PCPF) x,y,z vector in meters
-        x = (N + self.Altitude) * cosLat * math.cos(self.Longitude)
-        y = (N + self.Altitude) * cosLat * math.sin(self.Longitude)
-        z = (N*(1.0 - e2) + self.Altitude) * sinLat
+        cosLat = math.cos( self.latitude_rad )
+        # set the earth centered, earth fixed (ECEF) x,y,z vector in meters
+        x = (N + self.altitudeMsl_m) * cosLat * math.cos(self.longitude_rad)
+        y = (N + self.altitudeMsl_m) * cosLat * math.sin(self.longitude_rad)
+        z = (N*(1.0 - e2) + self.altitudeMsl_m) * sinLat
         return x, y, z
     
-    def PcpfToLlaZhu(self, x, y, z):
+    def ecef_to_lla_Zhu(self, x, y, z):
         """Convert from ECEF coordinates to geodetic using Zhu.
         
         A closed form solution with no singularities.
@@ -394,12 +230,12 @@ class Planet(UnitTest):
         geodetic coordinates. Technical Report IEEE Log NO. T-AES/30/3/1666, 
         IEEE, December 1993.
         """
-        a  = self.SemiMajor
-        b  = self.SemiMinor
-        e  = self.Eccentricity
-        e2 = self.EccentricitySquared
+        a  = self.semiMajor_m
+        b  = self.semiMinor_m
+        e  = self.eccentricity
+        e2 = self.eccentricitySquared
 
-        assert b != 0, "SemiMinor axis is 0"
+        assert b != 0, "semiMinor_m axis is 0"
         ep  = e * a / b
         ep2 = ep * ep
         
@@ -418,114 +254,38 @@ class Planet(UnitTest):
         V = math.sqrt( (r-e2*r0)**2.0 + (1.0 - e2)*z*z )
         z0 = (b*b*z)/(a*V)
 
-        self.Latitude  = math.atan((z + ep2*z0)/r)
-        self.Longitude = math.atan2(y , x)
-        self.Altitude  = U * ( 1.0 - (b*b)/(a*V) )
+        self.latitude_rad  = math.atan((z + ep2*z0)/r)
+        self.longitude_rad = math.atan2(y , x)
+        self.altitudeMsl_m  = U * ( 1.0 - (b*b)/(a*V) )
         
-    def PcpfToLlaOsen(self, x, y, z):
-        """Convert ECEF to geodetic using Osen.
-        
-        (DO NOT USE; needs debugging)
-        
-        Karl Osen. Accurate Conversion of Earth-Fixed Earth-Centered 
-        Coordinates to Geodetic Coordinates. Research Report Norwegian 
-        University of Science and Technology. 2017
-        """
-        WGS84_INVAA = +2.45817225764733181057e-0014 # 1/(a^2)
-        WGS84_EED2  = +3.34718999507065852867e-0003 # (e^2)/2
-        WGS84_EEEE  = +4.48147234524044602618e-0005 # e^4
-        WGS84_EEEED4 = +1.12036808631011150655e-0005 # (e^4)/4
-        WGS84_P1MEE  = +9.93305620009858682943e-0001 # 1-(e^2)
-        WGS84_P1MEEDAA = +2.44171631847341700642e-0014 # (1-(e^2))/(a^2)
-        WGS84_INVCBRT2 = +7.93700525984099737380e-0001 # 1/(2^(1/3))
-        WGS84_INV3     = +3.33333333333333333333e-0001 # 1/3
-        WGS84_INV6     = +1.66666666666666666667e-0001 # 1/6
-        
-        ww = x * x + y * y
-        m = ww * WGS84_INVAA
-        n = z * z * WGS84_P1MEEDAA
-        mpn = m + n
-        p = WGS84_INV6 * (mpn - WGS84_EEEE)
-        G = m * n * WGS84_EEEED4
-        H = 2 * p * p * p + G
-        
-        C = ((H + G + 2 * math.sqrt(H * G))**WGS84_INV3) * WGS84_INVCBRT2
-        assert C != 0, "PcpfToLLaOsen C is 0"
-        i = -WGS84_EEEED4 - 0.5 * mpn
-        P = p * p
-        beta = WGS84_INV3 * i - C - (P / C)
-        k = WGS84_EEEED4 * (WGS84_EEEED4 - mpn)
-        
-        # Compute left part of t
-        t1 = beta * beta - k
-        assert t1 >= 0, "PcpfToLLaOsen t1 is negative. t1: {0}".format(t1)
-        t2 = math.sqrt(t1)
-        t3 = t2 - 0.5 * (beta + i)
-        assert t3 >= 0, "PcpfToLLaOsen t3 is negative"
-        t4 = math.sqrt(t3)
-        # Compute right part of t
-        t5 = 0.5 * (beta - i)
-        # t5 may accidentally drop just below zero due to numeric turbulence
-        # This only occurs at latitudes close to +- 45.3 degrees
-        t5 = abs(t5)
-        t6 = math.sqrt(t5)
-        t7 = t6 if (m < n) else -t6
-        # Add left and right parts
-        t = t4 + t7
-        # Use Newton-Raphson's method to compute t correction
-        j = WGS84_EED2 * (m - n)
-        g = 2 * j
-        tt = t * t
-        ttt = tt * t
-        tttt = tt * tt
-        F = tttt + 2 * i * tt + g * t + k
-        dFdt = 4 * ttt + 4 * i * t + g;
-        dt = -F / dFdt
-
-        # compute latitude (range -PI/2..PI/2)
-        u = t + dt + WGS84_EED2
-        v = t + dt - WGS84_EED2
-        w = math.sqrt(ww)
-        zu = z * u
-        wv = w * v
-        self.Latitude = math.atan2(zu, wv)
-        
-        # compute altitude
-        assert (u*v) != 0, "PcpfToLlaOsen (u*v) is 0"
-        invuv = 1 / (u * v)
-        dw = w - wv * invuv
-        dz = z - zu * WGS84_P1MEE * invuv
-        da = math.sqrt(dw * dw + dz * dz)
-        self.Altitude = -da if (u < 1) else da
-
-        # compute longitude (range -PI..PI)
-        self.Longitude = math.atan2(y, x);
-        
-    def AirData(self, altitude):
+    def air_data(self, altitude):
         pass
     
-    def DynamicPressure(self, altitude, trueAirspeed):
+    def dynamic_pressure(self, altitude, trueAirspeed):
         # get dynamic pressure:  q = 1/2 rho v^2
-        self.AirData(altitude) 
+        self.air_data(altitude) 
         
-        dynamicPressure = 0.5 * self.density * trueAirspeed * trueAirspeed
+        dynamicPressure = 0.5 * self.airDensity_kg_m3 * trueAirspeed * trueAirspeed
+        
+        self.trueAirspeed_m_s = trueAirspeed
         
         return dynamicPressure
-        
+    
 ###############################################################################
-class Earth(Planet):
+class Earth(BasePlanet):
     """An atmospheric and gravity model for Earth."""
     def __init__(self):
-        self.GM = 3.986004418e14              # GM constant in m3/s2
+        self.GM_m3_s2 = 3.986004418e14         # GM constant in m3/s2
         self.J2 = 1.082626684e-3
-        self.RotationRate = 7.292115e-5  # Earth Rotation Rate (rad/sec, East)
+        self.rotationRate_rad_s = 7.292115e-5  # Earth Rotation Rate (rad/sec, East)
+        self.gravity_constant_m_s2 = 9.80665
     
-        self.SemiMajor   = 6378137.0          # WGS84 defined
-        self.Flattening  = 1/298.257223563    # WGS84 defined
-        self.CalcSemiMinor()
-        self.CalcEccentricity()
+        self.semiMajor_m   = 6378137.0          # WGS84 defined
+        self.flattening    = 1/298.257223563    # WGS84 defined
+        self.calculate_semi_minor()
+        self.calculate_eccentricity()
     
-    def AirData(self, altitude):
+    def air_data(self, altitude):
         """The 1976 standard atmosphere model.
         
         U.S. Standard Atmosphere, 1976, NASA-TM-X-74335
@@ -548,7 +308,7 @@ class Earth(Planet):
         Input: 
             geometric altitude in meters
         Output:
-            airDensity, temperature, pressure, speedOfSoundMps
+            airDensity, temperature, pressure, speedOfSound_m_s
         """
         # Geopotential Alt (m) table ranges for 1976 US standard atmosphere
         #      0        1        2        3        4        5        6
@@ -606,24 +366,20 @@ class Earth(Planet):
         )
         
         assert airTemperature >= 0, "temp: {}, alt: {}".format(airTemperature, altitude)
-        airSpeedOfSoundMps = math.sqrt( airGamma * Rgc * airTemperature )
+        airSpeedOfSound_m_s = math.sqrt( airGamma * Rgc * airTemperature )
     
-        self.density = airDensity
-        self.temperature = airTemperature
-        self.pressure = airPressure
-        self.speedOfSoundMps = airSpeedOfSoundMps
+        self.airDensity_kg_m3 = airDensity
+        self.temperature_dgK = airTemperature
+        self.pressure_Pa = airPressure
+        self.speedOfSound_m_s = airSpeedOfSound_m_s
         
         return
-        
-    def GravityConstant(self):
-        """Constant gravity value for Earth """
-        return 9.80665
     
-    def GravityWgs84(self, latRad, lonRad, h):
+    def gravity_wgs84(self, latRad, lonRad, h):
         """The WGS-84 model of Earth gravity """
-        a = self.SemiMajor
-        b = self.SemiMinor
-        E = self.Eccentricity
+        a = self.semiMajor_m
+        b = self.semiMinor_m
+        E = self.eccentricity
         sinPhi = math.sin(latRad)
         sin2Phi = sinPhi**2
         N = a / math.sqrt(1 - E*E*sin2Phi)
@@ -634,8 +390,8 @@ class Earth(Planet):
         gp = 9.8321849378
         g0 = (a*ge + cos2Phi + b*gp*sin2Phi) / math.sqrt(a*a*cos2Phi + b*b*sin2Phi)
         f = (a - b) / a
-        w = self.RotationRate
-        m = w*w*a*a*b / self.GM
+        w = self.rotationRate_rad_s
+        m = w*w*a*a*b / self.GM_m3_s2
         gh = g0*(1 - 2/a * (1 + f + m - 2*f*sin2Phi)*h + (3*h*h)/(a*a))
         cosLambda = math.cos(lonRad)
         sinLambda = math.sin(lonRad)
@@ -654,13 +410,13 @@ class Earth(Planet):
         
         return GhGX, GhGZ, GhGZ
         
-    def GravityJ2(self, x, y, z):
+    def gravity_J2(self, x, y, z):
         """The J2 portion of gravity """
         r2 = x*x + y*y + z*z
         r = math.sqrt(r2)
         assert r != 0, "Gravity J2 r is 0"
-        gmOverR3 = -self.GM / (r**3)
-        j2Term = (1.5 * self.J2) * (self.SemiMajor)**2 / (r**4)
+        gmOverR3 = -self.GM_m3_s2 / (r**3)
+        j2Term = (1.5 * self.J2) * (self.semiMajor_m)**2 / (r**4)
         z2 = 5.0 * z * z
         
         gx = x * gmOverR3 * (1 - j2Term*(z2 - r2))
@@ -669,13 +425,13 @@ class Earth(Planet):
         
         return gx, gy, gz
         
-    def GravityJ2SL(self, x, y, z):
+    def gravity_J2SL(self, x, y, z):
         """The J2 portion of gravity as defined by Stevens and Lewis """
         r = math.sqrt(x*x + y*y + z*z)
         assert r != 0, "Gravity J2 r is 0"
         sinPsi2 = (z / r)**2
-        aOverR2 = 1.5 * self.J2 * (self.SemiMajor / r)**2
-        gmOverR2 = -self.GM/(r**2)
+        aOverR2 = 1.5 * self.J2 * (self.semiMajor_m / r)**2
+        gmOverR2 = -self.GM_m3_s2/(r**2)
         
         gx = gmOverR2 * (1 + aOverR2 * (1.0 - 5.0*sinPsi2)) * (x / r)
         gy = gmOverR2 * (1 + aOverR2 * (1.0 - 5.0*sinPsi2)) * (y / r)
@@ -683,148 +439,54 @@ class Earth(Planet):
         
         return gx, gy, gz
     
-    def GravityR2(self, x, y, z):
+    def gravity_r2(self, x, y, z):
         """Newton gravity equation model """
         r2 = x*x + y*y + z*z
         assert r2 != 0, "GravityR2 r2 is 0"
-        return self.GM/r2
+        return self.GM_m3_s2/r2
     
-    def UnitTest(self):
-        self.ClassName = "Earth"
-        self.TestValue(6356752, self.SemiMinor, "b", 1)
-        self.TestValue(8.18191908426e-2, self.Eccentricity, "eccentricity", 1e-12)
-        
-        # TODO: fix gravity unit tests
-        #self.TestValue(9.7879, self.GravityJ2(0,0), "gravity", 1e-4)
-        #self.TestValue(9.7848, self.GravityJ2(1000,math.radians(12.34)), "gravity", 1e-4)
-        #self.TestValue(9.7725, self.GravityJ2(5000,math.radians(24.6621)), "gravity", 1e-4)
-        #self.TestValue(9.72, self.GravityJ2(25000,math.radians(45.0)), "gravity", 1e-2)
-        #self.TestValue(9.56, self.GravityJ2(75000,math.radians(65.0)), "gravity", 1e-2)
-        
-        self.ClassName = "Earth AirData"
-        self.AirData(0)
-        self.TestValue(1.225, self.density, "density at 0m", 1e-3)
-        self.TestValue(288.15, self.temperature, "temperature at 0m", 1e-2)
-        self.TestValue(101325, self.pressure, "pressure at 0m", 1)
-        self.TestValue(340.294, self.speedOfSoundMps, "speed of sound at 0m", 0.1)
-        
-        self.AirData(2000)
-        self.TestValue(1.00649, self.density, "density at 2km", 1e-3)
-        self.TestValue(275.156, self.temperature, "temperature at 2km", 1e-2)
-        self.TestValue(79505.1, self.pressure, "pressure at 2km", 10)
-        self.TestValue(332.529, self.speedOfSoundMps, "speed of sound at 2km", 0.1)
-        
-        self.AirData(5000)
-        self.TestValue(0.736116, self.density, "density at 5km", 1e-3)
-        self.TestValue(255.676, self.temperature, "temperature at 5km", 1e-2)
-        self.TestValue(54048.8, self.pressure, "pressure at 5km", 10)
-        self.TestValue(320.529, self.speedOfSoundMps, "speed of sound at 5km", 0.1)
-        
-        self.AirData(12000)
-        self.TestValue(0.310828, self.density, "density at 12km", 1e-2)
-        self.TestValue(216.65, self.temperature, "temperature at 12km", 1e-2)
-        self.TestValue(19401, self.pressure, "pressure at 12km", 10)
-        self.TestValue(295.070, self.speedOfSoundMps, "speed of sound at 12km", 0.1)
-        
-        self.AirData(26000)
-        self.TestValue(0.0336882, self.density, "density at 26km", 1e-3)
-        self.TestValue(222.544, self.temperature, "temperature at 26km", 1e-2)
-        self.TestValue(2188.41, self.pressure, "pressure at 26km", 10)
-        self.TestValue(299.128, self.speedOfSoundMps, "speed of sound at 26km", 1.0)
-        
-        #self.ClassName = "Earth AirData Density"
-        #di = 0  # air density index
-        #self.TestValue(1.225, self.AirData(0)[di], "0m", 1e-3)
-        
-        #self.ClassName = "Earth AirData Temperature"
-        #ti = 1  # temperature index
-        #self.TestValue(288.15, self.AirData(0)[ti], "0m", 1e-2)
-        #self.TestValue(275.156, self.AirData(2000)[ti], "2km", 1e-2)
-        #self.TestValue(255.676, self.AirData(5000)[ti], "5km", 1e-2)
-        #self.TestValue(216.65, self.AirData(12000)[ti], "12km", 1e-2)
-        #self.TestValue(222.544, self.AirData(26000)[ti], "26km", 1e-2)
-        
-        #self.ClassName = "Earth AirData Pressure"
-        #pi = 2  # pressure index
-        #self.TestValue(101325, self.AirData(0)[pi], "0m", 1)
-        #self.TestValue(79505.1, self.AirData(2000)[pi], "2km", 10)
-        #self.TestValue(54048.8, self.AirData(5000)[pi], "5km", 10)
-        #self.TestValue(19401, self.AirData(12000)[pi], "12km", 10)
-        #self.TestValue(2188.41, self.AirData(26000)[pi], "26km", 1)
-        
-        #self.ClassName = "Earth AirData Sound"
-        #si = 3  # speed of sound index
-        #self.TestValue(340.294, self.AirData(0)[si], "0m", 1e-3)
-        
-        self.ClassName = "Planet Olsen"
-        self.PcpfToLlaOsen(1191786.0, -5157122.0, 3562840.0)
-        self.TestValue(34.123456, math.degrees(self.Latitude), "lat", 1e-6)
-        self.TestValue(-76.987654, math.degrees(self.Longitude), "lon", 1e-6)
-        self.TestValue(9000.0, self.Altitude, "alt", 1)
-        
-        self.ClassName = "Planet Zhu"
-        self.PcpfToLlaZhu(1191786.0, -5157122.0, 3562840.0)
-        self.TestValue(34.123456, math.degrees(self.Latitude), "lat", 1e-6)
-        self.TestValue(-76.987654, math.degrees(self.Longitude), "lon", 1e-6)
-        self.TestValue(9000.0, self.Altitude, "alt", 1)
-        
-        self.ClassName = "Planet"
-        self.Latitude = math.radians(34.123456)
-        self.Longitude = math.radians(-76.987654)
-        self.Altitude = 9000.0
-        [x, y, z] = self.LlaToPcpf()
-        self.TestValue(1191786.0, x, "X", 1)
-        self.TestValue(-5157122.0, y, "Y", 1)
-        self.TestValue(3562840.0, z, "Z", 1)
-        
-        print("Number of Earth failed tests: ", self.FailCount)
-        
 ###############################################################################
-class Moon(Planet):
+class Moon(BasePlanet):
     """A simple gravity model of the moon.
     
     The reference for the moon parameters is [NESC Academy Presentation]
     (https://nescacademy.nasa.gov/video/02f47c99e5944e20a31931ce78fd4ea21d).
     """
     def __init__(self):
-        self.RotationRate = 2.6617072235e-6  # Moon Rotation Rate (rad/sec, East)
-        self.GM = 4.90154449e12
-        self.SemiMajor = 1738140.0
-        self.Flattening  = 1.0 / 800.98618
-        self.CalcSemiMinor()
-        self.CalcEccentricity()
+        self.rotationRate_rad_s = 2.6617072235e-6  # Moon Rotation Rate (rad/sec, East)
+        self.GM_m3_s2 = 4.90154449e12
+        self.semiMajor_m = 1738140.0
+        self.flattening  = 1.0 / 800.98618
+        self.gravity_constant_m_s2 = 1.625
+        self.calculate_semi_minor()
+        self.calculate_eccentricity()
     
-    def AirData(self, altitude):
+    def air_data(self, altitude):
         """No atmosphere on the moon."""
         return
     
-    def Gravity(self, altitude, latRad):
+    def gravity(self, altitude, latRad):
         """Moon gravity model."""
-        r = altitude + self.SemiMajor
-        gravity = self.GM/r/r
+        r = altitude + self.semiMajor_m
+        gravity = self.GM_m3_s2/r/r
         return gravity
     
-    def UnitTest(self):
-        self.ClassName = "Moon"
-        self.TestValue(1.62242, self.Gravity(0,0), "gravity", 1e-6)
-        
-        print("Number of Moon failed tests: ", self.FailCount)
-        
 ###############################################################################
-class Mars(Planet):
+class Mars(BasePlanet):
     """A gravity and atmosphere model for Mars.
 
     The reference for the [Mars atmosphere model]
     (https://www.grc.nasa.gov/WWW/K-12/airplane/atmosmrm.html).  
     """
     def __init__(self):
-        self.GM = 42828.371901284e9
-        self.RotationRate = 7.0882181e-5  # Mars Rotation Rate (rad/sec, East)
-        self.SemiMajor = 3.396196e6
+        self.GM_m3_s2 = 42828.371901284e9
+        self.rotationRate_rad_s = 7.0882181e-5  # Mars Rotation Rate (rad/sec, East)
+        self.semiMajor_m = 3.396196e6
         self.J2 = 0.00195545367944545
-        self.CalcSemiMinor()
+        self.gravity_constant_m_s2 = 3.72076
+        self.calculate_semi_minor()
     
-    def AirData(self, altitude):
+    def air_data(self, altitude):
         """Returns the Martian air density given the altitude."""
         temperatureC = 0
         if altitude > 7000:
@@ -835,17 +497,17 @@ class Mars(Planet):
         pressureKPa = 0.699 * math.exp( -0.00009 * altitude )
         airDensity  = pressurePa / (0.1921 * (temperatureC + 273.1))
         
-        self.density = airDensity
-        self.temperature = temperatureC
-        self.pressure = pressureKPa
-        self.speedOfSoundMps = 0
+        self.airDensity_kg_m3 = airDensity
+        self.temperature_dgK = temperatureC + 274.15
+        self.pressure_Pa = 1000*airPressureKPa
+        self.speedOfSound_m_s = 0  # TODO: add speed of sound calculation
         
         return
     
-    def Gravity(self, altitude, latRad):
+    def gravity(self, altitude, latRad):
         """Martian gravity model given the altitude and latitude."""
-        marsGM = self.GM
-        marsRadiusMeter = self.SemiMajor
+        marsGM = self.GM_m3_s2
+        marsRadiusMeter = self.semiMajor_m
         J2 = self.J2
         J3 = 3.14498094262035e-5
         J4 = -1.53773961526397e-5
@@ -861,263 +523,94 @@ class Mars(Planet):
     
         return gravity
     
-    def UnitTest(self):
-        self.ClassName = "Mars"
-        self.TestValue(3.724179, self.Gravity(0,0), "gravity", 1e-6)
-        
-        print("Number of Mars failed tests: ", self.FailCount)
-        
 ###############################################################################
-class Vector3(UnitTest):
-    """A 3 component vector class"""
-    def __init__(self, x, y, z):
-        self.X = x
-        self.Y = y
-        self.Z = z
-        
-    # defining how to print the class
-    def __str__(self):
-        return "(%s, %s, %s)" % (self.X, self.Y, self.Z)
-    
-    # overloading the + to add vectors
-    def __add__(self, o):
-        x = self.X + o.X
-        y = self.Y + o.Y
-        z = self.Z + o.Z
-        return Vector3(x,y,z)
-    
-    # overloading the - to subtract vectors
-    def __sub__(self, o):
-        x = self.X - o.X
-        y = self.Y - o.Y
-        z = self.Z - o.Z
-        return Vector3(x,y,z)
-    
-    # overloading the ^ for cross product
-    def __xor__(self, o):
-        x = self.Y * o.Z - self.Z * o.Y
-        y = self.Z * o.X - self.X * o.Z
-        z = self.X * o.Y - self.Y * o.X
-        return Vector3(x,y,z)
-    
-    # overloading the * to multiply scalars to a vector
-    def __mul__(self, s):
-        x = self.X * s
-        y = self.Y * s
-        z = self.Z * s
-        return Vector3(x,y,z)
-    
-    # overloading the / to divide a vector by a scalar
-    def __truediv__(self, s):
-        x = self.X / s
-        y = self.Y / s
-        z = self.Z / s
-        return Vector3(x,y,z)
-    
-    __rmul__ = __mul__
-    
-    def Set(self, x, y, z):
-        self.X = x
-        self.Y = y
-        self.Z = z
-        
-    def Magnitude(self):
-        magnitude = math.sqrt(self.X*self.X + self.Y*self.Y + self.Z*self.Z)
-        return magnitude
-        
-    def UnitTest(self):
-        self.ClassName = "Vector3"
-        v1 = Vector3(21,33,19)
-        self.TestValue( 21, v1.X, "init X", 1e-6)
-        self.TestValue( 33, v1.Y, "init Y", 1e-6)
-        self.TestValue( 19, v1.Z, "init Z", 1e-6)
-        v2 = Vector3(21,33,19)
-        v3 = Vector3(79,67,81)
-        v1 = v2 + v3
-        self.TestValue( 100, v1.X, "add X", 1e-6)
-        self.TestValue( 100, v1.Y, "add Y", 1e-6)
-        self.TestValue( 100, v1.Z, "add Z", 1e-6)
-        v4 = Vector3(0,3,-4)
-        self.TestValue( 5, v4.Magnitude(), "magnitude", 1e-6)
-        v4.Set( 87, 16.9, -3.1 )
-        self.TestValue(   87, v4.X, "Set X", 1e-6)
-        self.TestValue( 16.9, v4.Y, "Set Y", 1e-6)
-        self.TestValue( -3.1, v4.Z, "Set Z", 1e-6)
-        v5 = v3 - v2
-        self.TestValue( 58, v5.X, "sub X", 1e-6)
-        self.TestValue( 34, v5.Y, "sub Y", 1e-6)
-        self.TestValue( 62, v5.Z, "sub Z", 1e-6)
-        v5 = v2 - v3
-        self.TestValue( -58, v5.X, "sub X", 1e-6)
-        self.TestValue( -34, v5.Y, "sub Y", 1e-6)
-        self.TestValue( -62, v5.Z, "sub Z", 1e-6)
-        v6 = Vector3(4,12,2)
-        v7 = Vector3(13,5,7)
-        v8 = v6 ^ v7
-        self.TestValue(   74, v8.X, "cross X", 1e-6)
-        self.TestValue(   -2, v8.Y, "cross Y", 1e-6)
-        self.TestValue( -136, v8.Z, "cross Z", 1e-6)
-        v9 = 2 * v6
-        self.TestValue(   8, v9.X, "mul X", 1e-6)
-        self.TestValue(  24, v9.Y, "mul Y", 1e-6)
-        self.TestValue(   4, v9.Z, "mul Z", 1e-6)
-        v10 = v7 / 2
-        self.TestValue(  6.5, v10.X, "div X", 1e-6)
-        self.TestValue(  2.5, v10.Y, "div Y", 1e-6)
-        self.TestValue(  3.5, v10.Z, "div Z", 1e-6)
-        v11 = v10
-        self.TestValue(  6.5, v11.X, "= X", 1e-6)
-        self.TestValue(  2.5, v11.Y, "= Y", 1e-6)
-        self.TestValue(  3.5, v11.Z, "= Z", 1e-6)
-            
-        print("Number of Vector3 failed tests: ", self.FailCount)
-        
-###############################################################################
-class Quaternion(UnitTest):
-    """A quaternion class for EOM.
-    
-    Reference for checking [quaternion rotation]
-    (https://www.andre-gaschler.com/rotationconverter/).  
-    
-    Quaternion multiplication checked [here]
-    (https://www.vcalc.com/wiki/vCalc/Quaternion+Multiplication).
-    
-    $t=q*r=t_0 + \mathbf{i}t_1 + \mathbf{j}t_2 + \mathbf{k}t_3$  
-    $t_0 = q_0r_0 - q_1r_1 - q_2r_2 - q_3r_3$  
-    $t_1 = q_1r_0 + q_0r_1 - q_3r_2 + q_2r_3$  
-    $t_2 = q_2r_0 + q_3r_1 + q_0r_2 - q_1r_3$  
-    $t_3 = q_3r_0 - q_2r_1 + q_1r_2 + q_0r_3$  
-
-    System b to a -> $q_{b/a}$
-
-    $u^b = q_{b/a}^{-1} * u^a * q_{b/a}$, and $q_{b/a}^{-1} = q_{a/b}$  
-    $u^c = q_{c/b}^{-1} q_{b/a}^{-1} \, u^a \, q_{b/a} q_{c/b}$
-
-    $v^{frd} = q_{\phi}^{-1} q_{\theta}^{-1} q_{\psi}^{-1} \, v^{ned} \, q_{\psi} q_{\theta} q_{\phi}$
-
-    $q_{frd/ned} = q_{\psi} q_{\theta} q_{\phi} = 
-    \begin{matrix}
-    \cos\frac{\phi}{2}\cos\frac{\theta}{2}\cos\frac{\psi}{2} + \sin\frac{\phi}{2}\sin\frac{\theta}{2}\sin\frac{\psi}{2}\\
-    \sin\frac{\phi}{2}\cos\frac{\theta}{2}\cos\frac{\psi}{2} - \cos\frac{\phi}{2}\sin\frac{\theta}{2}\sin\frac{\psi}{2} \\
-    \cos\frac{\phi}{2}\sin\frac{\theta}{2}\cos\frac{\psi}{2} + \sin\frac{\phi}{2}\cos\frac{\theta}{2}\sin\frac{\psi}{2} \\
-    \cos\frac{\phi}{2}\cos\frac{\theta}{2}\sin\frac{\psi}{2} - \sin\frac{\phi}{2}\sin\frac{\theta}{2}\cos\frac{\psi}{2}
-    \end{matrix}$
-
-    $q_{ned/ecf} = 
-    \begin{matrix}
-    \phantom{-} \cos\frac{lon}{2} \cos(\frac{lat}{2} + 45^{\circ}) \\
-    \phantom{-} \sin\frac{lon}{2} \sin(\frac{lat}{2} + 45^{\circ}) \\
-    -\cos\frac{lon}{2} \sin(\frac{lat}{2} + 45^{\circ}) \\
-    \phantom{-} \sin\frac{lon}{2} \cos(\frac{lat}{2} + 45^{\circ})
-    \end{matrix}$
-
-    $\omega^{frd} = q_{frd/ned}^{-1} q_{ned/ecf}^{-1} \, \omega^{ecf} \, q_{ned/ecf} q_{frd/ned}$
-
-    $F^{ecf} = q_{ecf/ned}^{-1} q_{ned/frd}^{-1} \, F^{frd} \, q_{ned/frd} q_{ecf/ned}$  
-    $\phantom{F^{ecf}} = q_{ned/ecf} q_{frd/ned} \, F^{frd} \, q_{frd/ned}^{-1} q_{ned/ecf}^{-1}$
-
-    $v^{ecf} = q_{ecf/ned}^{-1} q_{ned/frd}^{-1} \, v^{frd} \, q_{ned/frd} q_{ecf/ned}$  
-    $\phantom{v^{ecf}} = q_{ned/ecf} q_{frd/ned} \, v^{frd} \, q_{frd/ned}^{-1} q_{ned/ecf}^{-1}$  
-
-    $u^{ned} = q_{ned/frd}^{-1} \, u^{frd} \, q_{ned/frd}$  
-    $q_{ned/frd}^{-1} = q_{frd/ned}$  
-    $u^{ned} = q_{frd/ned} \, 
-    \begin{bmatrix}
-    0 \\
-    u
-    \end{bmatrix}
-    \, q_{frd/ned}^{-1}$  
-    """
-    def __init__(self, n, x, y, z):
-        self.N = n
-        self.X = x
-        self.Y = y
-        self.Z = z
+class Quaternion():
+    def __init__(self, n=0, x=0, y=0, z=0):
+        self.n = n
+        self.x = x
+        self.y = y
+        self.z = z
     
     # defining how to print the class
     def __repr__(self):
-        return "(%s, %s, %s, %s)" % (self.N, self.X, self.Y, self.Z)
+        return "(%s, %s, %s, %s)" % (self.n, self.x, self.y, self.z)
     
     # overloading the ~ for quaternion inverse
     def __invert__(self):
-        n = self.N
-        x = -self.X
-        y = -self.Y
-        z = -self.Z
-        return Quaternion(n,x,y,z)
+        _n = self.n
+        _x = -self.x
+        _y = -self.y
+        _z = -self.z
+        return Quaternion(_n, _x, _y, _z)
     
     # overloading the + to add quaternions
     def __add__(self, o):
-        n = self.N + o.N
-        x = self.X + o.X
-        y = self.Y + o.Y
-        z = self.Z + o.Z
-        return Quaternion(n,x,y,z)
+        _n = self.n + o.n
+        _x = self.x + o.x
+        _y = self.y + o.y
+        _z = self.z + o.z
+        return Quaternion(_n, _x, _y, _z)
+    
+    # overloading the - to subtract quaternions
+    def __sub__(self, o):
+        _n = self.n - o.n
+        _x = self.x - o.x
+        _y = self.y - o.y
+        _z = self.z - o.z
+        return Quaternion(_n, _x, _y, _z)
     
     # overlaoding the * to multiply quaternions and multiple scalars and quaternions
     def __mul__(self,o):
-        n=0
-        x=0
-        y=0
-        z=0
-        if isinstance(o, Quaternion):
-            n = self.N*o.N - self.X*o.X - self.Y*o.Y - self.Z*o.Z
-            x = self.N*o.X + self.X*o.N + self.Y*o.Z - self.Z*o.Y
-            y = self.N*o.Y + self.Y*o.N + self.Z*o.X - self.X*o.Z
-            z = self.N*o.Z + self.Z*o.N + self.X*o.Y - self.Y*o.X
-        elif isinstance(o, Vector3):
-            n = -(self.X*o.X + self.Y*o.Y + self.Z*o.Z)
-            x =   self.N*o.X + self.Y*o.Z - self.Z*o.Y
-            y =   self.N*o.Y + self.Z*o.X - self.X*o.Z
-            z =   self.N*o.Z + self.X*o.Y - self.Y*o.X
-        else:
-            n = self.N * o
-            x = self.X * o
-            y = self.Y * o
-            z = self.Z * o
-        return Quaternion(n,x,y,z)
+        _n = self.n*o.n - self.x*o.x - self.y*o.y - self.z*o.z
+        _x = self.n*o.x + self.x*o.n + self.y*o.z - self.z*o.y
+        _y = self.n*o.y + self.y*o.n + self.z*o.x - self.x*o.z
+        _z = self.n*o.z + self.z*o.n + self.x*o.y - self.y*o.x
+        return Quaternion(_n, _x, _y, _z)
     
     # so that scalar * quaternion is the same as quaternion * scalar
     __rmul__ = __mul__
     
-    def Normalize(self):
-        magnitude = math.sqrt(self.N*self.N + self.X*self.X + self.Y*self.Y + self.Z*self.Z)
+    def magnitude(self):
+        return math.sqrt(self.n*self.n + self.x*self.x + self.y*self.y + self.z*self.z)
+    
+    def normalize(self):
+        magnitude = self.magnitude()
         
         if magnitude != 0:
-            self.N = self.N / magnitude
-            self.X = self.X / magnitude
-            self.Y = self.Y / magnitude
-            self.Z = self.Z / magnitude
+            self.n = self.n / magnitude
+            self.x = self.x / magnitude
+            self.y = self.y / magnitude
+            self.z = self.z / magnitude
         
-    def SetRollPitchYaw(self, roll, pitch, yaw):
+    def set_roll_pitch_yaw(self, roll, pitch, yaw):
         qroll  = Quaternion( math.cos(0.5*roll) , math.sin(0.5*roll), 0.0                , 0.0)
         qpitch = Quaternion( math.cos(0.5*pitch), 0.0               , math.sin(0.5*pitch), 0.0)
         qyaw   = Quaternion( math.cos(0.5*yaw)  , 0.0               , 0.0                , math.sin(0.5*yaw))
 
         # ZYX rotation
         q = qyaw*qpitch*qroll
-        q.Normalize()
+        q.normalize()
         
-        self.N = q.N
-        self.X = q.X
-        self.Y = q.Y
-        self.Z = q.Z
+        self.n = q.n
+        self.x = q.x
+        self.y = q.y
+        self.z = q.z
         
-    def SetLatLon(self, lat, lon):
-        n =  math.cos(0.5*lon)*math.cos(0.5*lat + 0.25*math.pi)
-        x =  math.sin(0.5*lon)*math.sin(0.5*lat + 0.25*math.pi)
-        y = -math.cos(0.5*lon)*math.sin(0.5*lat + 0.25*math.pi)
-        z =  math.sin(0.5*lon)*math.cos(0.5*lat + 0.25*math.pi)
+    def set_lat_lon(self, lat, lon):
+        _n =  math.cos(0.5*lon)*math.cos(0.5*lat + 0.25*math.pi)
+        _x =  math.sin(0.5*lon)*math.sin(0.5*lat + 0.25*math.pi)
+        _y = -math.cos(0.5*lon)*math.sin(0.5*lat + 0.25*math.pi)
+        _z =  math.sin(0.5*lon)*math.cos(0.5*lat + 0.25*math.pi)
         
-        q = Quaternion( n, x, y, z )
-        q.Normalize()
+        q = Quaternion( _n, _x, _y, _z )
+        q.normalize()
         
-        self.N = q.N
-        self.X = q.X
-        self.Y = q.Y
-        self.Z = q.Z
+        self.n = q.n
+        self.x = q.x
+        self.y = q.y
+        self.z = q.z
         
-    def SetQfrdWrtEcf(self, roll, pitch, yaw, lat, lon):
+    def set_qfrd_wrt_ecf(self, roll, pitch, yaw, lat, lon):
         qroll  = Quaternion( math.cos(0.5*roll) , math.sin(0.5*roll), 0.0                , 0.0)
         qpitch = Quaternion( math.cos(0.5*pitch), 0.0               , math.sin(0.5*pitch), 0.0)
         qyaw   = Quaternion( math.cos(0.5*yaw)  , 0.0               , 0.0                , math.sin(0.5*yaw))
@@ -1130,28 +623,28 @@ class Quaternion(UnitTest):
         # ZYX rotation
         q = qlon*qlat*qyaw*qpitch*qroll
         
-        self.N = q.N
-        self.X = q.X
-        self.Y = q.Y
-        self.Z = q.Z
+        self.n = q.n
+        self.x = q.x
+        self.y = q.y
+        self.z = q.z
         
-    def SetPlanetRotation(self, rotationAngle_rad):
-        n = math.cos(0.5*rotationAngle_rad)
-        z = math.sin(0.5*rotationAngle_rad)
+    def set_planet_rotation(self, rotationAngle_rad):
+        _n = math.cos(0.5*rotationAngle_rad)
+        _z = math.sin(0.5*rotationAngle_rad)
         
-        q = Quaternion(n, 0.0, 0.0, z)
-        q.Normalize()
+        q = Quaternion(_n, 0.0, 0.0, _z)
+        q.normalize()
         
-        self.N = q.N
-        self.X = q.X
-        self.Y = q.Y
-        self.Z = q.Z
+        self.n = q.n
+        self.x = q.x
+        self.y = q.y
+        self.z = q.z
         
-    def EulerAnglesFromQ(self):
-        q0 = self.N
-        q1 = self.X
-        q2 = self.Y
-        q3 = self.Z
+    def euler_angles(self):
+        q0 = self.n
+        q1 = self.x
+        q2 = self.y
+        q3 = self.z
         
         c11 = q0*q0 + q1*q1 - q2*q2 - q3*q3
         c12 = 2.0*(q1*q2 + q0*q3)
@@ -1159,348 +652,17 @@ class Quaternion(UnitTest):
         c23 = 2.0*(q2*q3 + q0*q1)
         c33 = q0*q0 - q1*q1 - q2*q2 + q3*q3
         
-        roll  =  math.atan2(c23,c33)
-        pitch = -math.asin(c13)
-        yaw   =  math.atan2(c12,c11)
+        roll_rad  =  math.atan2(c23,c33)
+        pitch_rad = -math.asin(c13)
+        yaw_rad   =  math.atan2(c12,c11)
 
-        return [roll, pitch, yaw] 
-              
-    def EulerAnglesFromQold(self):
-        qnn = self.N * self.N
-        qxx = self.X * self.X
-        qyy = self.Y * self.Y
-        qzz = self.Z * self.Z
-        
-        img = qxx + qyy + qzz + qnn
-        assert img != 0, "EulerAnglesFromQ all elements 0 for quaternion"
-        img = 1.0 / img
-
-        m11 = (qnn + qxx - qyy - qzz)*img
-        m12 = 2.0*(self.X*self.Y + self.Z*self.N)*img
-        m13 = 2.0*(self.X*self.Z - self.Y*self.N)*img
-        m23 = 2.0*(self.Y*self.Z + self.X*self.N)*img
-        m33 = (qnn - qxx - qyy + qzz)*img
-
-        roll = 0
-        pitch = 0
-        yaw = 0
-        if abs(m13) >= 1.0:
-            m21 = 2.0*(self.X*self.Y - self.Z*self.N)*img
-            m31 = 2.0*(self.X*self.Z + self.Y*self.N)*img;
-            roll  = 0.0
-            halfPi = 0.5*math.pi
-            pitch = -halfPi if (m13 > 0.0) else halfPi
-            yaw   = math.atan2(-m21, -m31/m13)
-        else:
-            roll  = math.atan2(m23,m33)  # Roll
-            pitch = math.asin(-m13)      # Pitch
-            yaw   = math.atan2(m12,m11)  # Yaw
-
-        return [roll, pitch, yaw]
-        
-    def UnitTest(self):
-        self.ClassName = "Quaternion"
-        q0 = Quaternion(4,7,8,9)
-        q0i = ~q0
-        self.TestValue( 4, q0i.N, "inverse", 1e-6)
-        self.TestValue(-7, q0i.X, "inverse", 1e-6)
-        self.TestValue(-8, q0i.Y, "inverse", 1e-6)
-        self.TestValue(-9, q0i.Z, "inverse", 1e-6)
-        q1 = Quaternion(2,3,4,5)
-        q2 = Quaternion(8,9,10,11)
-        q3 = q1 + q2
-        self.TestValue(10, q3.N, "add", 1e-6)
-        self.TestValue(12, q3.X, "add", 1e-6)
-        self.TestValue(14, q3.Y, "add", 1e-6)
-        self.TestValue(16, q3.Z, "add", 1e-6)
-        q4 = q1 * q2
-        self.TestValue(-106, q4.N, "multiply", 1e-6)
-        self.TestValue(36, q4.X, "multiply", 1e-6)
-        self.TestValue(64, q4.Y, "multiply", 1e-6)
-        self.TestValue(56, q4.Z, "multiply", 1e-6)
-        q5 = 7.0 * q1
-        self.TestValue(14, q5.N, "scalar multiply", 1e-6)
-        self.TestValue(21, q5.X, "scalar multiply", 1e-6)
-        self.TestValue(28, q5.Y, "scalar multiply", 1e-6)
-        self.TestValue(35, q5.Z, "scalar multiply", 1e-6)
-        q6 = q2 * 10
-        self.TestValue(80, q6.N, "scalar multiply", 1e-6)
-        self.TestValue(90, q6.X, "scalar multiply", 1e-6)
-        self.TestValue(100, q6.Y, "scalar multiply", 1e-6)
-        self.TestValue(110, q6.Z, "scalar multiply", 1e-6)
-        q6.SetRollPitchYaw(0.3,-0.7,3.11)
-        self.TestValue(-0.0365642, q6.N, "Euler", 1e-6)
-        self.TestValue(0.3412225, q6.X, "Euler", 1e-6)
-        self.TestValue(0.1350051, q6.Y, "Euler", 1e-6)
-        self.TestValue(0.9295181, q6.Z, "Euler", 1e-6)
-        [roll, pitch, yaw] = q6.EulerAnglesFromQ()
-        self.TestValue( 0.3, roll, "EulerFromQ", 1e-6)
-        self.TestValue(-0.7, pitch, "EulerFromQ", 1e-6)
-        self.TestValue(3.11, yaw, "EulerFromQ", 1e-6)
-        q7 = Quaternion(0.6680766, 0.2325211, 0.1160514, 0.6972372)
-        [roll, pitch, yaw] = q7.EulerAnglesFromQ()
-        self.TestValue( 0.5, roll, "EulerFromQ", 1e-6)
-        self.TestValue(-0.17, pitch, "EulerFromQ", 1e-6)
-        self.TestValue(1.57, yaw, "EulerFromQ", 1e-6)
-        q8 = Quaternion(6,-6,6,6)
-        q8.Normalize()
-        self.TestValue( 0.5, q8.N, "Normalize", 1e-6)
-        self.TestValue(-0.5, q8.X, "Normalize", 1e-6)
-        self.TestValue( 0.5, q8.Y, "Normalize", 1e-6)
-        self.TestValue( 0.5, q8.Z, "Normalize", 1e-6)
-        q9 = Quaternion(1,3,-2,7)
-        q9.Normalize()
-        mag = math.sqrt(1 + 9 + 4 + 49)
-        self.TestValue( 1.0/mag, q9.N, "Normalize 2", 1e-6)
-        self.TestValue( 3.0/mag, q9.X, "Normalize 2", 1e-6)
-        self.TestValue(-2.0/mag, q9.Y, "Normalize 2", 1e-6)
-        self.TestValue( 7.0/mag, q9.Z, "Normalize 2", 1e-6)
-        
-        print("Number of Quaternion failed tests: ", self.FailCount)
-        
+        return [roll_rad, pitch_rad, yaw_rad]
+    
 ###############################################################################
-class Matrix3x3(UnitTest):
-    A11 = 1
-    A12 = 0
-    A13 = 0
-    
-    A21 = 0
-    A22 = 1
-    A23 = 0
-    
-    A31 = 0
-    A32 = 0
-    A33 = 1
-    
-    def __mul__(self, v):
-        if isinstance(v, Vector3):
-            x = self.A11 * v.X + self.A12 * v.Y + self.A13 * v.Z
-            y = self.A21 * v.X + self.A22 * v.Y + self.A23 * v.Z
-            z = self.A31 * v.X + self.A32 * v.Y + self.A33 * v.Z
-            return Vector3(x,y,z)
-        elif isinstance(v, Matrix3x3):
-            a11 = self.A11*v.A11 + self.A12*v.A21 + self.A13*v.A31
-            a12 = self.A11*v.A12 + self.A12*v.A22 + self.A13*v.A32
-            a13 = self.A11*v.A13 + self.A12*v.A23 + self.A13*v.A33
-
-            a21 = self.A21*v.A11 + self.A22*v.A21 + self.A23*v.A31
-            a22 = self.A21*v.A12 + self.A22*v.A22 + self.A23*v.A32
-            a23 = self.A21*v.A13 + self.A22*v.A23 + self.A23*v.A33
-            
-            a31 = self.A31*v.A11 + self.A32*v.A21 + self.A33*v.A31
-            a32 = self.A31*v.A12 + self.A32*v.A22 + self.A33*v.A32
-            a33 = self.A31*v.A13 + self.A32*v.A23 + self.A33*v.A33
-            
-            a = Matrix3x3()
-            a.SetRow1( a11, a12, a13 )
-            a.SetRow2( a21, a22, a23 )
-            a.SetRow3( a31, a32, a33 )
-            return a
-        
-        else:
-            a11 = self.A11 * v
-            a12 = self.A12 * v
-            a13 = self.A13 * v
-            a21 = self.A21 * v
-            a22 = self.A22 * v
-            a23 = self.A23 * v
-            a31 = self.A31 * v
-            a32 = self.A32 * v
-            a33 = self.A33 * v
-            a = Matrix3x3()
-            a.SetRow1( a11, a12, a13 )
-            a.SetRow2( a21, a22, a23 )
-            a.SetRow3( a31, a32, a33 )
-            return a
-            
-            
-    def SetRow1(self, a11, a12, a13):
-        self.A11 = a11
-        self.A12 = a12
-        self.A13 = a13
-        
-    def SetRow2(self, a21, a22, a23):
-        self.A21 = a21
-        self.A22 = a22
-        self.A23 = a23
-        
-    def SetRow3(self, a31, a32, a33):
-        self.A31 = a31
-        self.A32 = a32
-        self.A33 = a33
-        
-    # defining how to print the class
-    def __str__(self):
-        row1 = "(%s, %s, %s)\n" % (self.A11, self.A12, self.A13)
-        row2 = "(%s, %s, %s)\n" % (self.A21, self.A22, self.A23)
-        row3 = "(%s, %s, %s)" % (self.A31, self.A32, self.A33)
-        return row1+row2+row3
-    
-    def Determinant(self):
-        d1 = self.A11*(self.A22*self.A33 - self.A23*self.A32)
-        d2 = self.A12*(self.A23*self.A31 - self.A21*self.A33)
-        d3 = self.A13*(self.A21*self.A32 - self.A22*self.A31)
-        return d1+d2+d3
-    
-    def Inverse(self):
-        D = self.Determinant()
-
-        im = Matrix3x3()
-
-        # make sure D is not 0
-        if abs(D) > 1e-12:
-            a11 = (self.A22*self.A33 - self.A23*self.A32)/D
-            a12 = (self.A13*self.A32 - self.A12*self.A33)/D
-            a13 = (self.A12*self.A23 - self.A13*self.A22)/D
-
-            a21 = (self.A23*self.A31 - self.A21*self.A33)/D
-            a22 = (self.A11*self.A33 - self.A13*self.A31)/D
-            a23 = (self.A13*self.A21 - self.A11*self.A23)/D
-
-            a31 = (self.A21*self.A32 - self.A22*self.A31)/D
-            a32 = (self.A12*self.A31 - self.A11*self.A32)/D
-            a33 = (self.A11*self.A22 - self.A12*self.A21)/D
-            
-            im.SetRow1(a11, a12, a13)
-            im.SetRow2(a21, a22, a23)
-            im.SetRow3(a31, a32, a33)
-            
-        return im
-            
-    def Transpose(self):        
-        at = Matrix3x3()
-        at.SetRow1(self.A11, self.A21, self.A31)
-        at.SetRow2(self.A12, self.A22, self.A32)
-        at.SetRow3(self.A13, self.A23, self.A33)
-        return at
-    
-    def QuaternionToMatrix(self, q):
-        n = q.N;
-        x = q.X;
-        y = q.Y;
-        z = q.Z;
-
-        self.SetRow1( n*n + x*x - y*y - z*z,       2.0*(x*y - n*z),       2.0*(x*z + n*y) )
-        self.SetRow2(       2.0*(x*y + n*z), n*n - x*x + y*y - z*z,       2.0*(y*z - n*x) )
-        self.SetRow3(       2.0*(x*z - n*y),       2.0*(y*z + n*x), n*n - x*x - y*y + z*z ) 
-    
-    def UnitTest(self):
-        self.ClassName = "Matrix3"
-        m1 = Matrix3x3()
-        m1.SetRow1(1,2,3)
-        m1.SetRow2(4,5,6)
-        m1.SetRow3(7,3,9)
-        self.TestValue(-30, m1.Determinant(), "Determinant", 1e-6)
-        m1.SetRow1(1,2,3)
-        m1.SetRow2(0,1,4)
-        m1.SetRow3(5,6,0)
-        self.TestValue(1, m1.Determinant(), "Determinant", 1e-6)
-        m1 = m1.Inverse()
-        self.TestValue(-24, m1.A11, "Inverse A11", 1e-6)
-        self.TestValue( 18, m1.A12, "Inverse A12", 1e-6)
-        self.TestValue(  5, m1.A13, "Inverse A13", 1e-6)
-        self.TestValue( 20, m1.A21, "Inverse A21", 1e-6)
-        self.TestValue(-15, m1.A22, "Inverse A22", 1e-6)
-        self.TestValue( -4, m1.A23, "Inverse A23", 1e-6)
-        self.TestValue( -5, m1.A31, "Inverse A31", 1e-6)
-        self.TestValue(  4, m1.A32, "Inverse A32", 1e-6)
-        self.TestValue(  1, m1.A33, "Inverse A33", 1e-6)
-        
-        m2 = Matrix3x3()
-        m2.SetRow1(1,2,3)
-        m2.SetRow2(4,5,6)
-        m2.SetRow3(7,2,9)
-        m2 = m2.Inverse()
-        self.TestValue(-11/12, m2.A11, "Inverse A11", 1e-6)
-        self.TestValue(   1/3, m2.A12, "Inverse A12", 1e-6)
-        self.TestValue(  1/12, m2.A13, "Inverse A13", 1e-6)
-        self.TestValue(  -1/6, m2.A21, "Inverse A21", 1e-6)
-        self.TestValue(   1/3, m2.A22, "Inverse A22", 1e-6)
-        self.TestValue(  -1/6, m2.A23, "Inverse A23", 1e-6)
-        self.TestValue(   3/4, m2.A31, "Inverse A31", 1e-6)
-        self.TestValue(  -1/3, m2.A32, "Inverse A32", 1e-6)
-        self.TestValue(  1/12, m2.A33, "Inverse A33", 1e-6)
-        
-        m3 = Matrix3x3()
-        m3.SetRow1( 1,2,3)
-        m3.SetRow2(-4,5,6)
-        m3.SetRow3( 7,8.1,9)
-        m4 = m3.Transpose()
-        self.TestValue(   1, m3.A11, "Transpose A11", 1e-6)
-        self.TestValue(   2, m3.A12, "Transpose A12", 1e-6)
-        self.TestValue(   3, m3.A13, "Transpose A13", 1e-6)
-        self.TestValue(  -4, m3.A21, "Transpose A21", 1e-6)
-        self.TestValue(   5, m3.A22, "Transpose A22", 1e-6)
-        self.TestValue(   6, m3.A23, "Transpose A23", 1e-6)
-        self.TestValue(   7, m3.A31, "Transpose A31", 1e-6)
-        self.TestValue( 8.1, m3.A32, "Transpose A32", 1e-6)
-        self.TestValue(   9, m3.A33, "Transpose A33", 1e-6)
-        self.TestValue(   1, m4.A11, "Transpose A11", 1e-6)
-        self.TestValue(  -4, m4.A12, "Transpose A12", 1e-6)
-        self.TestValue(   7, m4.A13, "Transpose A13", 1e-6)
-        self.TestValue(   2, m4.A21, "Transpose A21", 1e-6)
-        self.TestValue(   5, m4.A22, "Transpose A22", 1e-6)
-        self.TestValue( 8.1, m4.A23, "Transpose A23", 1e-6)
-        self.TestValue(   3, m4.A31, "Transpose A31", 1e-6)
-        self.TestValue(   6, m4.A32, "Transpose A32", 1e-6)
-        self.TestValue(   9, m4.A33, "Transpose A33", 1e-6)
-        
-        q = Quaternion(0.7, 0.4, 3.2, -0.87)
-        q.Normalize()
-        m4.QuaternionToMatrix(q)
-        self.TestValue( -0.8883823, m4.A11, "Quaternion A11", 1e-7)
-        self.TestValue(  0.3243782, m4.A12, "Quaternion A12", 1e-7)
-        self.TestValue(  0.3248933, m4.A13, "Quaternion A13", 1e-7)
-        self.TestValue(  0.1152238, m4.A21, "Quaternion A21", 1e-7)
-        self.TestValue(  0.8425504, m4.A22, "Quaternion A22", 1e-7)
-        self.TestValue( -0.5261486, m4.A23, "Quaternion A23", 1e-7)
-        self.TestValue( -0.4444101, m4.A31, "Quaternion A31", 1e-7)
-        self.TestValue( -0.4299857, m4.A32, "Quaternion A32", 1e-7)
-        self.TestValue( -0.7858829, m4.A33, "Quaternion A33", 1e-7)
-        
-        m1.SetRow1(2,6,3)
-        m1.SetRow2(1,1,8)
-        m1.SetRow3(5,7,-6)
-        
-        v1 = Vector3(9,11,-4)
-        v2 = m1 * v1
-        self.TestValue(  72, v2.X, "Matrix * Vector X", 1e-7)
-        self.TestValue( -12, v2.Y, "Matrix * Vector Y", 1e-7)
-        self.TestValue( 146, v2.Z, "Matrix * Vector Z", 1e-7)
-        
-        m1.SetRow1(6,3,17)
-        m1.SetRow2(-4,-0.1,7)
-        m1.SetRow3(14,5,-1)
-        m2.SetRow1(5,0,-6)
-        m2.SetRow2(3,8,2)
-        m2.SetRow3(-1,-4,-9)
-        m3 = m1 * m2
-        self.TestValue(    22, m3.A11, "Matrix * Matrix A11", 1e-7)
-        self.TestValue(   -44, m3.A12, "Matrix * Matrix A12", 1e-7)
-        self.TestValue(  -183, m3.A13, "Matrix * Matrix A13", 1e-7)
-        self.TestValue( -27.3, m3.A21, "Matrix * Matrix A21", 1e-7)
-        self.TestValue( -28.8, m3.A22, "Matrix * Matrix A22", 1e-7)
-        self.TestValue( -39.2, m3.A23, "Matrix * Matrix A23", 1e-7)
-        self.TestValue(    86, m3.A31, "Matrix * Matrix A31", 1e-7)
-        self.TestValue(    44, m3.A32, "Matrix * Matrix A32", 1e-7)
-        self.TestValue(   -65, m3.A33, "Matrix * Matrix A33", 1e-7)
-        
-        m5 = m2 * 2
-        self.TestValue(    10, m5.A11, "Matrix * Scalar A11", 1e-7)
-        self.TestValue(     0, m5.A12, "Matrix * Scalar A12", 1e-7)
-        self.TestValue(   -12, m5.A13, "Matrix * Scalar A13", 1e-7)
-        self.TestValue(     6, m5.A21, "Matrix * Scalar A21", 1e-7)
-        self.TestValue(    16, m5.A22, "Matrix * Scalar A22", 1e-7)
-        self.TestValue(     4, m5.A23, "Matrix * Scalar A23", 1e-7)
-        self.TestValue(    -2, m5.A31, "Matrix * Scalar A31", 1e-7)
-        self.TestValue(    -8, m5.A32, "Matrix * Scalar A32", 1e-7)
-        self.TestValue(   -18, m5.A33, "Matrix * Scalar A33", 1e-7)
-        
-        print("Number of Matrix3x3 failed tests: ", self.FailCount)  
-        
-###############################################################################
-class Integrator(UnitTest):
-    def AdamsBashforth(self, h, current, past):
+class BaseIntegrator():
+    """A class to integrate a set of 1st order differential equations.
+    """
+    def adams_bashforth(self, h, current, past):
         k2 = [1.5, -0.5]
         k3 = [23.0/12.0, -16.0/12.0, 5.0/12.0]
         
@@ -1510,7 +672,7 @@ class Integrator(UnitTest):
         
         return [x, y, z]
     
-    def RungeKutta4(self, h, Fdot, arg):
+    def runge_kutta_4(self, h, Fdot, arg):
         k1 = []
         arg1 = []
         for (a, f) in zip(arg, Fdot):
@@ -1542,466 +704,87 @@ class Integrator(UnitTest):
 
         return result
     
-    def UnitTest(self):
-        self.ClassName = "Integrator"
-        def I1p(arg):
-            return (-4.0*arg[0] + 3.0*arg[1] + 6)
-
-        def I2p(arg):
-            return (-2.4*arg[0] + 1.6*arg[1] + 3.6)
-        
-        h = 0.1
-        Xdot = [I1p, I2p]
-        arg = [0, 0]
-        T = [.1, .2, .3, .4, .5]
-        I1 = [ 0.538255, 0.9684983,  1.310717,  1.581263, 1.793505]
-        I2 = [0.3196263, 0.5687817, 0.7607328, 0.9063208, 1.014402]
-        for (t,i1,i2) in zip(T,I1,I2):
-            wOut = self.RungeKutta4(h, Xdot, arg)
-            arg = wOut
-            
-            self.TestValue( wOut[0], i1, "Integrator I1", 1e-5)
-            self.TestValue( wOut[1], i2, "Integrator I2", 1e-5)
-
-        print("Number of Integrator failed tests: ", self.FailCount)
-
 ###############################################################################
-class SaveData(Convert):
-    # data to record
-    Labels = ({
-        'gePosition_ft_X': ['ft', 'm'], 
-        'gePosition_ft_Y': ['ft', 'm'], 
-        'gePosition_ft_Z': ['ft', 'm'],
-        'feVelocity_ft_s_X': ['ft_s', 'm_s'], 
-        'feVelocity_ft_s_Y': ['ft_s', 'm_s'], 
-        'feVelocity_ft_s_Z': ['ft_s', 'm_s'],
-        'altitudeMsl_ft': ['ft', 'm'], 
-        'longitude_deg': ['deg', 'rad'],
-        'latitude_deg': ['deg', 'rad'],
-        'localGravity_ft_s2': ['ft_s2', 'm_s2'],
-        'eulerAngle_deg_Yaw': ['deg', 'rad'],
-        'eulerAngle_deg_Pitch': ['deg', 'rad'],
-        'eulerAngle_deg_Roll': ['deg', 'rad'],
-        'bodyAngularRateWrtEi_deg_s_Roll': ['deg_s', 'rad_s'],
-        'bodyAngularRateWrtEi_deg_s_Pitch': ['deg_s', 'rad_s'],
-        'bodyAngularRateWrtEi_deg_s_Yaw': ['deg_s', 'rad_s'],
-        'speedOfSound_ft_s': ['ft_s', 'm_s'],
-        'aero_bodyForce_lbf_X': ['lbf', 'N'], 
-        'aero_bodyForce_lbf_Y': ['lbf', 'N'], 
-        'aero_bodyForce_lbf_Z': ['lbf', 'N'], 
-        'trueAirspeed_nmi_h':  ['nmi_h', 'm_s'],
-        'eiPosition_ft_X': ['ft', 'm'],
-        'eiPosition_ft_Y': ['ft', 'm'],
-        'eiPosition_ft_Z': ['ft', 'm']
-    })
-    
-    Metric = {}
-    Imperial = {}
-          
-    def SiKey(self, key):
-        oUnit = '_'+self.Labels[key][0]
-        iUnit = '_'+self.Labels[key][1]
-        siKey = key.replace(oUnit, iUnit)
-        return siKey
-    
-    def Init(self):
-        self.Clear()
-        self.Metric['time'] = []
-        for key in self.Labels:
-            self.Imperial[key] = []
-            siKey = self.SiKey(key)
-            self.Metric[siKey] = []
-    
-    def AddTime(self, value):
-        self.Metric['time'].append(value)
-        return
-    
-    def Add(self, label, value):
-        self.Metric[label].append(value)
-        return
-    
-    def Make(self):        
-        for key in self.Labels:
-            siKey = self.SiKey(key)
-            
-            units = self.Labels[key][1] + '->' + self.Labels[key][0]
-            self.Imperial[key] = self.ToImperial(self.Metric[siKey],units)
-            
-    def Clear(self):
-        self.Imperial.clear()
-        self.Metric.clear()
-        
-    def UnitTest(self):
-        self.ClassName = "SaveData"
-        
-        self.Init()
-            
-        self.AddTime(1)
-        self.AddTime(2)
-        self.AddTime(3)
-        
-        self.Add('gePosition_m_X', 20)
-        self.Add('gePosition_m_X', 21)
-        self.Add('gePosition_m_X', 22)
-        self.Add('gePosition_m_Y', 50)
-        self.Add('gePosition_m_Y', 55)
-        self.Add('gePosition_m_Y', 60)
-        self.Add('feVelocity_m_s_X', 70)
-        self.Add('feVelocity_m_s_X', 71)
-        self.Add('feVelocity_m_s_X', 72)
-        self.Add('altitudeMsl_m', 20)
-        self.Add('longitude_rad', 3.14159)
-        self.Add('localGravity_m_s2', 9.81)
-        self.Add('bodyAngularRateWrtEi_rad_s_Roll', 1.570796)
-        self.Add('speedOfSound_m_s', 100.0)
-        self.Add('aero_bodyForce_N_X', 90.0)
-        self.Add('trueAirspeed_m_s', 150.0)
-        
-        self.Make()
-        
-        self.TestValue(1, self.Metric["time"][0], "time", 0.1)
-        self.TestValue(2, self.Metric["time"][1], "time", 0.1)
-        self.TestValue(3, self.Metric["time"][2], "time", 0.1)
-        
-        k = 'gePosition_ft_X'
-        self.TestValue(65.62, self.Imperial[k][0], k, 0.01)
-        self.TestValue(68.90, self.Imperial[k][1], k, 0.01)
-        self.TestValue(72.18, self.Imperial[k][2], k, 0.01)
-        
-        k = 'gePosition_ft_Y'
-        self.TestValue(164.04, self.Imperial[k][0], k, 0.01)
-        self.TestValue(180.45, self.Imperial[k][1], k, 0.01)
-        self.TestValue(196.85, self.Imperial[k][2], k, 0.01)
-        
-        k = 'feVelocity_ft_s_X'
-        self.TestValue(229.66, self.Imperial[k][0], k, 0.01)
-        self.TestValue(232.94, self.Imperial[k][1], k, 0.01)
-        self.TestValue(236.22, self.Imperial[k][2], k, 0.01)
-        
-        k = 'altitudeMsl_ft'
-        self.TestValue(65.62, self.Imperial[k][0], k, 0.01)
-        
-        k = 'longitude_deg'
-        self.TestValue(180.0, self.Imperial[k][0], k, 0.1)
-        
-        k = 'localGravity_ft_s2'
-        self.TestValue(32.2, self.Imperial[k][0], k, 0.1)
-        
-        k = 'bodyAngularRateWrtEi_deg_s_Roll'
-        self.TestValue(90.0, self.Imperial[k][0], k, 0.1)
-        
-        k = 'speedOfSound_ft_s'
-        self.TestValue(328.08, self.Imperial[k][0], k, 0.01)
-        
-        k = 'aero_bodyForce_lbf_X'
-        self.TestValue(20.23, self.Imperial[k][0], k, 0.01)
-        
-        k = 'trueAirspeed_nmi_h'
-        self.TestValue(291.58, self.Imperial[k][0], k, 0.01)
-        
-        self.Clear()
-        print("Number of RecData failed tests: ", self.FailCount)
-    
-###############################################################################
-class Simulation(SaveData):
-    def __init__(self, daveFile):
-        self.DaveFile = daveFile
-        
-    Time = 0.0
-    timeStep = 0.1
-    Data = {}
-    IC = {}
-    
-    AeroModelInput = []
-    AeroModel = daveML.Model()
-    
-    ReferenceWingSpan = 0
-    ReferenceWingChord = 0
-    ReferenceWingArea = 0
-    
-    Position = Vector3(0, 0, 0)
-    
-    TotalMass = 0
-    TrueAirspeed = 0
-    BodyVelocity = Vector3(0, 0, 0)
-    BodyAccel = Vector3(0, 0, 0)
-    #BodyForce = Vector3(0, 0, 0)
-    BodyAngle = Vector3(0, 0, 0)
-    BodyAngularRate = Vector3(0, 0, 0)
-    BodyAngularAccel = Vector3(0, 0, 0)
-    
-    gvJx = 0
-    gvJy = 0
-    gvJz = 0
-    gvJxz = 0
-    Gamma = 0
-    InertiaMatrix = Matrix3x3()
-    InertiaMatrixInverse = Matrix3x3()
-    
-    aeroBodyForce = Vector3(0, 0, 0)
-    aeroBodyMoment = Vector3(0, 0, 0)
-    thrustBodyForce = Vector3(0, 0, 0)
-    
-    RecData = SaveData()
-    RecData.Init()
-        
-    def AdvanceTime(self):
-        self.RecData.AddTime(self.Time)
-        self.Time += self.timeStep
-        
-    def AddAeroModelInput(self, input):
-        self.AeroModelInput = input
-        
-    def EvaluateAeroModel(self):
-        for d in self.AeroModelInput:
-            self.AeroModel.Set(d, self.Data[d])
-        self.AeroModel.Update()
-
-    def Clear(self):
-        self.Time = 0.0
-        self.Data.clear()
-        self.RecData.Clear()
-        self.AeroModelInput.clear()
-    
-    def CalcAeroBodyForces(self, qS):
-        # compute the aero forces in the body frame
-        self.aeroBodyForce.X = ( 
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X") 
-        )
-        self.aeroBodyForce.Y = (
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y") 
-        )
-        self.aeroBodyForce.Z = (
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z") 
-        )
-        
-        # save the aero force data
-        self.RecData.Add('aero_bodyForce_N_X', self.aeroBodyForce.X)
-        self.RecData.Add('aero_bodyForce_N_Y', self.aeroBodyForce.Y)
-        self.RecData.Add('aero_bodyForce_N_Z', self.aeroBodyForce.Z)
-        
-    def CalcAeroBodyMoments(self, qS):
-        # calculate the dimensional aero moments
-        self.aeroBodyMoment.X = (qS * self.ReferenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
-        self.aeroBodyMoment.Y = (qS * self.ReferenceWingChord 
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
-        self.aeroBodyMoment.Z = (qS * self.ReferenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
-        
-    def NormalizeAngle(self, value, lower, upper):
-        """Returns a value between the range lower and upper.
-        
-        Example: NormalizeAngle(181, -180, 180) returns -179
-        """
-        angleRange = upper - lower
-        rangeValue = value - lower
-        return (rangeValue - (math.floor(rangeValue / angleRange) * angleRange)) + lower
-      
-    def SetValue(self, label, defValue = 0):
-        value = 0.0
-        infoStr = "none"
-        
-        if label in self.IC:
-            value = self.IC[label]
-            infoStr = "[IC case]"
-        elif self.AeroModel.HasName(label):
-            valueRaw = self.AeroModel.DataFromName(label)
-            units = self.AeroModel.Units(label)
-            value = self.ToSI(valueRaw, units)
-            infoStr = "[DML model]"
-        else:
-            value = defValue
-            infoStr = "[default]"
-        print("++", label, "=", value, infoStr)
-        return value
-        
-    def ResetSimulation(self, ic):
-        self.Clear()
-        self.RecData.Init()
-    
-        self.AeroModel.LoadDml(self.DaveFile, False)
-        
-        self.IC.clear()
-        self.IC = self.SetIC(ic)
-        #self.IC = ic.copy()
-        print(self.IC)
-        
-        self.timeStep = self.SetValue("timeStep", 0.1)
-        
-        self.TotalMass = self.SetValue("totalMass", 1)
-        assert self.TotalMass != 0, "TotalMass is 0"
-        
-        self.ReferenceWingSpan = self.SetValue("referenceWingSpan")
-        self.ReferenceWingChord = self.SetValue("referenceWingChord")
-        self.ReferenceWingArea = self.SetValue("referenceWingArea")
-        
-        self.AeroModel.Set("aeroBodyForceCoefficient_X")
-        self.AeroModel.Set("aeroBodyForceCoefficient_Y")
-        self.AeroModel.Set("aeroBodyForceCoefficient_Z")
-
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Roll")
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Pitch")
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Yaw")
-        
-        self.TrueAirspeed = self.SetValue("trueAirspeed")
-        
-        angleOfAttack = self.SetValue("angleOfAttack")
-        angleOfSideslip = self.SetValue("angleOfSideslip")
-        u = self.TrueAirspeed * math.cos(angleOfAttack) * math.cos(angleOfSideslip);
-        v = self.TrueAirspeed * math.sin(angleOfSideslip);
-        w = self.TrueAirspeed * math.sin(angleOfAttack) * math.cos(angleOfSideslip);
-        self.BodyVelocity.Set(u, v, w)
-        print("Vuvw: ", self.BodyVelocity)
-
-        self.BodyAccel.Set(0, 0, 0)
-        
-        # Set the rotation quaternion based on the Euler angles
-        rollEulerAngle  = self.SetValue("eulerAngle_Roll")
-        pitchEulerAngle = self.SetValue("eulerAngle_Pitch")
-        yawEulerAngle   = self.SetValue("eulerAngle_Yaw")
-        self.BodyAngle.Set( rollEulerAngle, pitchEulerAngle, yawEulerAngle )
-
-        # Set angular rates
-        P = self.SetValue("eulerAngleRate_Roll")
-        Q = self.SetValue("eulerAngleRate_Pitch")
-        R = self.SetValue("eulerAngleRate_Yaw")
-        self.BodyAngularRate.Set( P, Q, R )
-        
-        # Set the inertia matrix
-        i11 =  self.SetValue("bodyMomentOfInertia_X")
-        i12 = -self.SetValue("bodyProductOfInertia_XY")
-        i13 = -self.SetValue("bodyProductOfInertia_XZ")
-
-        i21 = -self.SetValue("bodyProductOfInertia_YX")
-        i22 =  self.SetValue("bodyMomentOfInertia_Y")
-        i23 = -self.SetValue("bodyProductOfInertia_YZ")
-
-        i31 = -self.SetValue("bodyProductOfInertia_XZ")
-        i32 = -self.SetValue("bodyProductOfInertia_YZ")
-        i33 =  self.SetValue("bodyMomentOfInertia_Z")
-
-        self.InertiaMatrix.SetRow1(i11, i12, i13)
-        self.InertiaMatrix.SetRow2(i21, i22, i23)
-        self.InertiaMatrix.SetRow3(i31, i32, i33)
-        
-        self.InertiaMatrixInverse = self.InertiaMatrix.Inverse()
-        
-        self.gvJx = self.InertiaMatrix.A11
-        self.gvJy = self.InertiaMatrix.A22
-        self.gvJz = self.InertiaMatrix.A33
-        self.gvJxz = self.InertiaMatrix.A13
-        self.Gamma = (self.gvJx*self.gvJz) - (self.gvJxz*self.gvJxz)
-    
-    def Reset(self, ic):
-        pass
-        
-    def Operate(self):
-        pass
-    
-    def Run(self, numberOfSeconds):
-        endTime = int(numberOfSeconds / self.timeStep) + 1
-        for i in range(endTime):
-            self.Operate()
-        print("======done=======")
-        
-    def UnitTest(self):
-        self.ClassName = "Simulation"
-        # test normalize angle between -180 and 180 (and -pi and pi)
-        pi = math.pi
-        for i in range(360):
-            ang = i
-            if ang > 179:
-                ang -= 360
-            self.TestValue(ang, self.NormalizeAngle(i, -180.0, 180.0), "NormalizeAngle", 0.001)
-            
-            ri = math.radians(i)
-            rang = math.radians(ang)
-            self.TestValue(rang, self.NormalizeAngle(ri, -pi, pi), "NormalizeAngle", 1e-6)     
-        
-        print("Number of Simulation failed tests: ", self.FailCount)
-        
-###############################################################################
-class FlatEarth(Simulation):
-    """ Flat Earth equations.
-    
-    Create a simulation for a flat Earth model. Singularities exist at the poles.  
-    Vehicle must be symmetric about the x body axis.  Vehicle pitch must stay 
-    below $90^\circ$.
-
-    Force Equations
-    ---------------
-    $\dot{U} = RV - QW - g_D \, \sin \theta + \frac{X_A + X_T}{m}$  
-    $\dot{V} = PW - RU + g_D \, \sin \phi \, \cos \theta + \frac{Y_A + Y_T}{m}$  
-    $\dot{W} = QU - PV + g_D \, \cos \phi \, \cos \theta + \frac{Z_A + Z_T}{m}$  
-    In vector form,  
-    $\dot{\vec{v}} = \frac{F}{m} + R_{n/b} 
-    \begin{pmatrix} 0 \\ 0 \\ g_D \end{pmatrix} - \vec{\omega} \times \vec{v}$  
-    where $R_{n/b}$ is the rotation matrix from NED to body.  
-    $R_{n/b} = 
-    \begin{bmatrix} 
-    1 &         0 &        0 \\
-    0 &  \cos \phi & \sin \phi \\
-    0 & -\sin \phi & \cos \phi
-    \end{bmatrix} 
-    \begin{bmatrix} 
-    \cos \theta &         0 & -\sin \theta \\
-    0           &         1 &            0 \\
-    \sin \theta &         0 & \cos \theta
-    \end{bmatrix}
-    \begin{bmatrix} 
-     \cos \psi &  \sin \psi & 0 \\
-    -\sin \psi &  \cos \psi & 0 \\
-             0 &          0 & 1
-    \end{bmatrix}$  
-    $R_{b/n} = [R_{n/b}]^T$  
-
-    Kinematic equations
-    -------------------
-    $\dot{\phi} = P + \tan \theta \, (Q \sin \phi + R \cos \phi)$  
-    $\dot{\theta} = Q \cos \phi - R \sin \phi$  
-    $\dot{\psi} = (Q \sin \phi + R \cos \phi) \, / \, \cos \theta$  
-    In vector form,  
-    $\dot{\Phi} = H {\omega}^b$, where $H = 
-    \begin{pmatrix}
-    1 & \sin \phi \tan \theta & \cos \phi \tan \theta \\
-    0 & \cos \phi             & -\sin \phi \\
-    0 & \sin \phi / \cos \theta & \cos \phi / \cos \theta
-    \end{pmatrix}$  
-
-    Moment Equations
-    ----------------
-    $\Gamma \dot{P} = J_{xz} [J_x - J_y + J_z]PQ - [J_z(J_z - J_y) + J^2_{xz}]QR + l J_z + n J_{xz}$  
-    $J_y \dot{Q} = (J_z - J_x)PR - J_{xz}(P^2 - R^2) + m$  
-    $\Gamma \dot{R} = [(J_x - J_y)J_x + J^2_{xz}]PQ - J_{xz}[J_x - J_y + J_z]QR + l J_{xz} n J_x$  
-    $\Gamma = J_x J_z - J^2_{xz}$  
-    In vector form,  
-    $\dot{\omega^b_{b/i}} = J^{-1}(M^b - \omega^b_{b/i} J \omega^b_{b/i} )$
-
-    Navigation Equations
-    --------------------
-    $\dot{p_N} = U c\theta c\psi + V(-c\phi s\psi + s\phi s\theta c\psi) 
-    + W(s\phi s\psi + c\phi s\theta c\psi)$  
-    $\dot{p_E} = U c\theta s\psi + V(c\phi c\psi + s\phi s\theta s\psi)
-    + W(-s\phi c\psi + c\phi s\theta c\psi)$  
-    $\dot{h} = U s\theta - V s\phi c\theta - W c\phi c\theta$  
-    In vector form,  
-    $\dot{\vec{p}} = R_{b/n} \vec{v}$
-    """
-    gD = 0
-    mass = 0
-    
-    Planet = Earth()
-    
-    # Integrator
-    Integrator = Integrator()
+class BaseEom():
+    def __init__(self, planet):
+        self.Planet = planet
     
     # state values
-    X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    X = []
     
     # state DFE
     Xdot = []
     
+    # record all states at each time step
+    All_X = []
+    
+    time_s = 0
+    timeStep_s = 0.1
+    totalMass_kg = 0
+    
+    bodyForce = Quaternion()
+    bodyMoment = Quaternion()
+    
+    Jx = 0
+    Jy = 0
+    Jz = 0
+    Jxz = 0
+    Gamma = 0
+    
+    Integrator = BaseIntegrator()
+    
+    dynamicPressure = 0
+    
+    Metric = {}
+        
+    def init(self):
+        pass
+    
+    def pre_process(self):
+        pass
+    
+    def post_process(self):
+        pass
+        
+    def record_data(self, label, value):
+        if label not in self.Metric:
+            self.Metric[label] = []
+        self.Metric[label].append(value)
+        
+    def advance_time(self):
+        self.record_data('time', self.time_s)
+        self.time_s += self.timeStep_s
+        
+    def make_data(self):
+        pass
+        
+    def clear_data(self):
+        self.time_s = 0
+        self.X.clear()
+        self.Xdot.clear()
+        self.All_X.clear()
+        self.Metric.clear()
+    
+    def set_body_angle(self, roll, pitch, yaw):
+        pass
+    
+    def set_body_velocity(self, u, v, w):
+        pass
+    
+    def set_body_angular_rate(self, p, q, r):
+        pass
+    
+    def set_position(self):
+        pass
+    
+    def set_body_force(self, bodyForce):
+        pass
+        
+    def set_body_moment(self, bodyMoment):
+        pass
+
+###############################################################################
+class FlatEom(BaseEom):
     # the indices of the state list
     Ui = 0
     Vi = 1
@@ -2019,15 +802,78 @@ class FlatEarth(Simulation):
     Ei = 10
     Zi = 11
     
+    gD = 0
+    
+    def init(self):
+        self.clear_data()
+        self.gD = self.Planet.gravity_constant_m_s2
+        self.X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.Xdot = [self.Udot, self.Vdot, self.Wdot, self.ϕdot, self.θdot, self.ψdot, 
+                     self.Pdot, self.Qdot, self.Rdot, self.Ndot, self.Edot, self.Zdot]
+    
+    def pre_process(self):
+        self.record_data('fePosition_m_X', self.X[self.Ni])
+        self.record_data('fePosition_m_Y', self.X[self.Ei])
+        self.record_data('fePosition_m_Z', self.X[self.Zi])
+        self.record_data('altitudeMsl_m', self.X[self.Zi])
+                    
+    def post_process(self):
+        #self.All_X.append(self.X)
+        self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
+        self.advance_time()
+    
+    def make_data(self):
+        for x in self.All_X:
+            self.record_data('time', self.time_s)
+            self.time_s += self.timeStep_s
+            
+            self.record_data('fePosition_m_X', x[self.Ni])
+            self.record_data('fePosition_m_Y', x[self.Ei])
+            self.record_data('fePosition_m_Z', x[self.Zi])
+            self.record_data('altitudeMsl_m', x[self.Zi])
+            
+            self.Planet.air_data(x[self.Zi])
+            self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
+        
+    def set_body_angle(self, roll, pitch, yaw):
+        self.X[self.ϕi] = roll
+        self.X[self.θi] = pitch
+        self.X[self.ψi] = yaw
+        
+    def set_position(self):
+        self.X[self.Ni] = self.Planet.fePosition_m_X
+        self.X[self.Ei] = self.Planet.fePosition_m_Y
+        self.X[self.Zi] = self.Planet.altitudeMsl_m
+        
+    def set_body_velocity(self, u, v, w):
+        self.X[self.Ui] = u
+        self.X[self.Vi] = v
+        self.X[self.Wi] = w
+        
+    def set_body_angular_rate(self, p, q, r):
+        self.X[self.Pi] = p
+        self.X[self.Qi] = q
+        self.X[self.Ri] = r  
+        
+    def set_body_force(self, bodyForce):
+        self.bodyForce = bodyForce
+        
+    def set_body_moment(self, bodyMoment):
+        self.bodyMoment = bodyMoment
+        
+    def check_mass(self, label):
+        assert self.totalMass_kg != 0, label
+        return self.totalMass_kg
+        
     def Udot(self, state):
         V = state[self.Vi]
         W = state[self.Wi]
         Q = state[self.Qi]
         R = state[self.Ri]
         sinθ = math.sin(state[self.θi])
+        mass = self.check_mass("Udot mass is 0")
         
-        assert self.mass != 0.0, "Udot mass is 0"
-        value =  R*V - Q*W - self.gD*sinθ + (self.aeroBodyForce.X + self.thrustBodyForce.X) / self.mass
+        value =  R*V - Q*W - self.gD*sinθ + self.bodyForce.x / mass
         return value
     
     def Vdot(self, state):
@@ -2037,9 +883,9 @@ class FlatEarth(Simulation):
         R = state[self.Ri]
         sinϕ = math.sin(state[self.ϕi])
         cosθ = math.cos(state[self.θi])
+        mass = self.check_mass("Vdot mass is 0")
         
-        assert self.mass != 0.0, "Vdot mass is 0"
-        value = -R*U + P*W + self.gD*sinϕ*cosθ + (self.aeroBodyForce.Y + self.thrustBodyForce.Y) / self.mass
+        value = -R*U + P*W + self.gD*sinϕ*cosθ + self.bodyForce.y / mass
         return value
     
     def Wdot(self, state):
@@ -2049,9 +895,9 @@ class FlatEarth(Simulation):
         Q = state[self.Qi]
         cosϕ = math.cos(state[self.ϕi])
         cosθ = math.cos(state[self.θi])
+        mass = self.check_mass("Wdot mass is 0")
         
-        assert self.mass != 0.0, "Wdot mass is 0"
-        value =  Q*U - P*V + self.gD*cosϕ*cosθ + (self.aeroBodyForce.Z + self.thrustBodyForce.Z) / self.mass
+        value =  Q*U - P*V + self.gD*cosϕ*cosθ + self.bodyForce.z / mass
         return value
     
     def ϕdot(self, state):
@@ -2091,12 +937,12 @@ class FlatEarth(Simulation):
         P = state[self.Pi]
         Q = state[self.Qi]
         R = state[self.Ri]
-        Jx = self.gvJx
-        Jy = self.gvJy
-        Jz = self.gvJz
-        Jxz = self.gvJxz
-        l = self.aeroBodyMoment.X
-        n = self.aeroBodyMoment.Z
+        Jx = self.Jx
+        Jy = self.Jy
+        Jz = self.Jz
+        Jxz = self.Jxz
+        l = self.bodyMoment.x
+        n = self.bodyMoment.z
         
         assert self.Gamma != 0.0, "Pdot Gamma is 0"
         value = (Jxz * (Jx - Jy + Jz)*P*Q - (Jz*(Jz - Jy) + Jxz*Jxz)*Q*R + Jz*l + Jxz*n) / self.Gamma
@@ -2106,31 +952,31 @@ class FlatEarth(Simulation):
         P = state[self.Pi]
         Q = state[self.Qi]
         R = state[self.Ri]
-        Jx = self.gvJx
-        Jy = self.gvJy
-        Jz = self.gvJz
-        Jxz = self.gvJxz
-        m = self.aeroBodyMoment.Y
+        Jx = self.Jx
+        Jy = self.Jy
+        Jz = self.Jz
+        Jxz = self.Jxz
+        m = self.bodyMoment.y
 
         assert Jy != 0.0, "Qdot Jy is 0"
         value = ((Jz - Jx)*P*R - Jxz*(P*P - R*R) + m) / Jy
         return value
-        
+    
     def Rdot(self, state):
         P = state[self.Pi]
         Q = state[self.Qi]
         R = state[self.Ri]
-        Jx = self.gvJx
-        Jy = self.gvJy
-        Jz = self.gvJz
-        Jxz = self.gvJxz
-        l = self.aeroBodyMoment.X
-        n = self.aeroBodyMoment.Z
+        Jx = self.Jx
+        Jy = self.Jy
+        Jz = self.Jz
+        Jxz = self.Jxz
+        l = self.bodyMoment.x
+        n = self.bodyMoment.z
         
         assert self.Gamma != 0.0, "Pdot Gamma is 0"
         value = (((Jx - Jy)*Jx + Jxz*Jxz)*P*Q - Jxz*(Jx - Jy + Jz)*Q*R + Jxz*l + Jx*n) / self.Gamma
         return value
-        
+    
     def Ndot(self, state):
         U = state[self.Ui]
         V = state[self.Vi]
@@ -2172,118 +1018,53 @@ class FlatEarth(Simulation):
         
         value = U*sinθ - V*sinϕ*cosθ - W*cosϕ*cosθ
         return value
-        
-    def Reset(self, ic):
-        self.ResetSimulation(ic)
-        
-        self.gD = self.Planet.GravityConstant()
-        self.mass = self.TotalMass
-        
-        self.Xdot.clear()
-        self.Xdot = [self.Udot, self.Vdot, self.Wdot, self.ϕdot, self.θdot, self.ψdot, 
-                     self.Pdot, self.Qdot, self.Rdot, self.Ndot, self.Edot, self.Zdot]
-        
-        self.X[self.Ui] = self.BodyVelocity.X
-        self.X[self.Vi] = self.BodyVelocity.Y
-        self.X[self.Wi] = self.BodyVelocity.Z
-        
-        self.X[self.ϕi] = self.BodyAngle.X
-        self.X[self.θi] = self.BodyAngle.Y
-        self.X[self.ψi] = self.BodyAngle.Z
-        
-        self.X[self.Pi] = self.BodyAngularRate.X
-        self.X[self.Qi] = self.BodyAngularRate.Y
-        self.X[self.Ri] = self.BodyAngularRate.Z
-        
-        self.X[self.Ni] = self.Position.X
-        self.X[self.Ei] = self.Position.Y
-        self.X[self.Zi] = self.SetValue("altitudeMsl")
-        
-    def Operate(self):
-        # save output data
-        self.RecData.Add('localGravity_m_s2', self.gD)
-        self.RecData.Add('altitudeMsl_m', self.X[self.Zi])
-        self.RecData.Add('eulerAngle_rad_Roll', self.X[self.ϕi])
-        self.RecData.Add('eulerAngle_rad_Pitch', self.X[self.θi])
-        self.RecData.Add('eulerAngle_rad_Yaw', self.NormalizeAngle(self.X[self.ψi],-math.pi,math.pi))
-        self.RecData.Add('trueAirspeed_m_s', self.TrueAirspeed)
-        
-        # integrate the equations
-        self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
-        
-        # Now advance time and update state equations
-        self.AdvanceTime()
-        
+    
+    def true_airspeed(self):
         u = self.X[self.Ui]
         v = self.X[self.Vi]
         w = self.X[self.Wi]
-        self.TrueAirspeed = math.sqrt(u*u + v*v + w*w)
+        trueAirspeed = math.sqrt(u*u + v*v + w*w)
+        return trueAirspeed
+    
+    def integrate(self):
+        # integrate the equations of motion
+        self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
+        
+        # get dynamic pressure:  q = 1/2 rho v^2
+        #density = self.Planet.AirDensity(self.X[self.Zi])
+        #dynamicPressure = 0.5 * density * (self.TrueAirspeed)**2
         
         # get dynamic pressure:  q = 1/2 rho v^2
         dynamicPressure = (
-            self.Planet.DynamicPressure(self.X[self.Zi], self.TrueAirspeed)
+            self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.true_airspeed())
         )
+        
+        return dynamicPressure
 
-        # Get the qS factor for getting dimensional forces and moments
-        qS = dynamicPressure * self.ReferenceWingArea
-
-        # Compute the aerodynamic loads
-        assert self.TrueAirspeed != 0, "TrueAirspeed is 0 to model"
-        self.Data["trueAirspeed"] = self.TrueAirspeed * self.MeterToFeet
-        self.Data["bodyAngularRate_Roll"] = self.X[self.Pi]
-        self.Data["bodyAngularRate_Pitch"] = self.X[self.Qi]
-        self.Data["bodyAngularRate_Yaw"] = self.X[self.Ri]
-        self.EvaluateAeroModel()
-        
-        # Aero forces (Newtons) body
-        self.CalcAeroBodyForces(qS)
-        
-        # Aero moments
-        self.CalcAeroBodyMoments(qS)
-        
 ###############################################################################
-class slEarthSim(Simulation):
+class OblateEom(BaseEom):
     """
-    The software implements the oblate rotating planet EOM as derived in 
-    [Stevens and Lewis]
-    (https://bcs.wiley.com/he-bcs/Books?action=index&itemId=0471371459&itemTypeId=BKS&bcsId=2073). 
-    
-    Equations in LaTeX format:
-    
-    $\dot{q_0} = -0.5 * (Pq_1 + Qq_2 + Rq_3)$  
-    $\dot{q_1} = 0.5 * (Pq_0 + Rq_2 - Qq_3)$  
-    $\dot{q_2} = 0.5 * (Qq_0 - Rq_1 + Pq_3)$  
-    $\dot{q_3} = 0.5 * (Rq_0 + Qq_1 - Pq_2)$  
-
-    $\dot{P_x} = V_x$  
-    $\dot{P_y} = V_y$  
-    $\dot{P_z} = V_z$  
-    where $P$ and $V$ are in the ECEF frame.
-
-    $\dot{v_x} = \frac{F_x}{m} + 2 \omega_e V_y + g_x + P_x \omega^2_e$  
-    $\dot{v_y} = \frac{F_y}{m} - 2 \omega_e V_x + g_y + P_y \omega^2_e$  
-    $\dot{v_z} = \frac{F_z}{m} + g_z$  
-    where $\omega_e$ is the rotation rate of Earth.  The terms $g_x$, $g_y$, 
-    and $g_z$ are the $J_2$ gravity components in ECEF. This acceleration equation 
-    is in the ECEF frame.
-
-    $\Gamma \dot{P} = J_{xz} [J_x - J_y + J_z]PQ - [J_z(J_z - J_y) + J^2_{xz}]QR 
-      + l J_z + n J_{xz}$  
-    $J_y \dot{Q} = (J_z - J_x)PR - J_{xz}(P^2 - R^2) + m$  
-    $\Gamma \dot{R} = [(J_x - J_y)J_x + J^2_{xz}]PQ - J_{xz}[J_x - J_y + J_z]QR 
-      + l J_{xz} n J_x$  
-    where $\Gamma = J_x J_z - J^2_{xz}$ 
     """
-    Planet = Earth()
-    RotationAngle = 0
-    EarthRotation = Quaternion(0, 0, 0, Planet.RotationRate)
-        
-    # Earth rotatation in body frame
-    Per = 0
-    Qer = 0
-    Rer = 0
     
-    # quaternion frame rotations
+    # the indices of the state list
+    Qni = 0
+    Qxi = 1
+    Qyi = 2
+    Qzi = 3
+
+    Xi = 4
+    Yi = 5
+    Zi = 6
+
+    Vxi = 7
+    Vyi = 8
+    Vzi = 9
+
+    Pi = 10
+    Qi = 11
+    Ri = 12
+    
+    # quaternions for frame rotations
     #  i = inertial frame ECI
     #  e = earth centered, earth fixed ECEF
     #  n = north east down NED
@@ -2293,47 +1074,155 @@ class slEarthSim(Simulation):
     Qe2b = Quaternion(1,0,0,0)
     Qi2e = Quaternion(1,0,0,0)
     
-    QforceEcf = Quaternion(0,0,0,0)
+    QgePosition = Quaternion(1,0,0,0)
+    Roll = 0
+    Pitch = 0
+    Yaw = 0
     
-    # ECEF gravity components
-    Gx = 0
-    Gy = 0
-    Gz = 0
+    ecfForce = Quaternion()
     
-    Integrator = Integrator()
-    
-    # state values: quaternion, position, acceleration and angular rates
-    X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
-    # the state differential equations
-    Xdot = []
-    
-    # the indices of the state list
-    Qni = 0
-    Qxi = 1
-    Qyi = 2
-    Qzi = 3
-    
-    Xi = 4
-    Yi = 5
-    Zi = 6
-    
-    Vxi = 7
-    Vyi = 8
-    Vzi = 9
-    
-    Pi = 10
-    Qi = 11
-    Ri = 12
-    
+    def init(self):
+        self.clear_data()
+        self.X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.Xdot = [self.QnDot, self.QxDot, self.QyDot, self.QzDot,
+                     self.PxDot, self.PyDot, self.PzDot,
+                     self.VxDot, self.VyDot, self.VzDot,
+                     self.Pdot, self.Qdot, self.Rdot]
+        
+    def pre_process(self):
+        # set q frd/ecf (e2b) ECF to body
+        Qe2b = Quaternion(self.X[0], self.X[1], self.X[2], self.X[3])
+        
+        # set q ned/ecf (e2n) ECF to NED
+        Qe2n = Quaternion()
+        Qe2n.set_lat_lon(self.Planet.latitude_rad, self.Planet.longitude_rad)
+        
+        # set q frd/ned (n2b) NED to body
+        Qn2b = ~Qe2n * Qe2b
+        
+        # get the euler angles from the quaternion
+        [self.Roll, self.Pitch, self.Yaw] = Qn2b.euler_angles()
+        
+        # rotate the ECF position to ECI to get the inertial position
+        Qi2e = Quaternion()
+        Qi2e.set_planet_rotation(self.Planet.rotationAngle_rad)
+        self.QgePosition = Quaternion( 0, self.X[self.Xi], self.X[self.Yi], self.X[self.Zi] )
+        self.QeiPosition = Qi2e * self.QgePosition * ~Qi2e
+        
+        self.record_data('altitudeMsl_m', self.Planet.altitudeMsl_m)
+        self.record_data('latitude_rad', self.Planet.latitude_rad)
+        self.record_data('longitude_rad', self.Planet.longitude_rad)
+        self.record_data('gePosition_m_X', self.X[4])
+        self.record_data('gePosition_m_Y', self.X[5])
+        self.record_data('gePosition_m_Z', self.X[6])
+        self.record_data('eulerAngle_rad_Roll', self.Roll)
+        self.record_data('eulerAngle_rad_Pitch', self.Pitch)
+        self.record_data('eulerAngle_rad_Yaw', self.Yaw)
+        self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
+        self.record_data('eiPosition_m_X', self.QeiPosition.x)
+        self.record_data('eiPosition_m_Y', self.QeiPosition.y)
+        self.record_data('eiPosition_m_Z', self.QeiPosition.z)
+        
+    def post_process(self):
+        self.record_data('speedOfSound_m_s', self.Planet.speedOfSound_m_s)
+        self.record_data('localGravity_m_s2', self.Planet.gravityQ.magnitude())
+        
+        # advance time and set up for next integration
+        self.advance_time()
+        
+        # update the latitude, longitude and altitude from ECEF X, Y, Z position
+        self.Planet.ecef_to_lla_Zhu(self.X[4], self.X[5], self.X[6])
+        
+        # rotate the earth
+        self.Planet.rotationAngle_rad = self.Planet.rotationRate_rad_s * self.time_s
+        
+    def make_data(self):
+        for x in All_X:
+            self.advance_time()
+            self.record_data('gePosition_m_X', x[self.Xi])
+            self.record_data('gePosition_m_Y', x[self.Yi])
+            self.record_data('gePosition_m_Z', x[self.Zi])
+            
+            self.Planet.air_data(x[self.Zi])
+            self.record_data('altitudeMsl_m', self.Planet.altitudeMsl_m)
+            self.record_data('latitude_rad', self.Planet.altitudeMsl_m)
+            self.record_data('longitude_rad', self.Planet.altitudeMsl_m)
+            self.record_data('speedOfSound_m_s', self.Planet.latitude_rad)
+            self.record_data('localGravity_m_s2', self.Planet.longitude_rad)
+            
+            # set q frd/ecf (e2b) ECF to body
+            Qe2b = Quaternion(x[0], x[1], x[2], x[3])
+
+            # set q ned/ecf (e2n) ECF to NED
+            Qe2n = Quaternion()
+            Qe2n.set_lat_lon(self.Planet.latitude_rad, self.Planet.longitude_rad)
+
+            # set q frd/ned (n2b) NED to body
+            Qn2b = ~Qe2n * Qe2b
+
+            # get the euler angles from the quaternion
+            [roll, pitch, yaw] = Qn2b.euler_angles()
+        
+            self.record_data('eulerAngle_rad_Roll', roll)
+            self.record_data('eulerAngle_rad_Pitch', pitch)
+            self.record_data('eulerAngle_rad_Yaw', yaw)
+            
+            self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
+            
+            # rotate the ECF position to ECI to get the inertial position
+            Qi2e = Quaternion()
+            Qi2e.set_planet_rotation(self.Planet.rotationAngle_rad)
+            QgePosition = Quaternion( 0, x[self.Xi], x[self.Yi], x[self.Zi] )
+            QeiPosition = Qi2e * self.QgePosition * ~Qi2e
+            self.record_data('eiPosition_m_X', QeiPosition.x)
+            self.record_data('eiPosition_m_Y', QeiPosition.y)
+            self.record_data('eiPosition_m_Z', QeiPosition.z)
+        
+    def set_body_angle(self, roll, pitch, yaw):
+        lat = self.Planet.latitude_rad
+        lon = self.Planet.longitude_rad
+        self.Qe2b.set_qfrd_wrt_ecf(roll , pitch , yaw, lat, lon)
+        
+        self.X[self.Qni] = self.Qe2b.n
+        self.X[self.Qxi] = self.Qe2b.x
+        self.X[self.Qyi] = self.Qe2b.y
+        self.X[self.Qzi] = self.Qe2b.z
+        
+    def set_position(self):
+        [x, y, z] = self.Planet.lla_to_ecef()
+        
+        self.X[self.Xi] = x
+        self.X[self.Yi] = y
+        self.X[self.Zi] = z
+        
+    def set_body_velocity(self, u, v, w):
+        # transform u,v,w to ECEF velocities
+        bodyVelocity = Quaternion(0, u, v, w)
+        Vecf = self.Qe2b * bodyVelocity * ~self.Qe2b
+        
+        self.X[self.Vxi] = Vecf.x
+        self.X[self.Vyi] = Vecf.y
+        self.X[self.Vzi] = Vecf.z
+        
+    def set_body_angular_rate(self, p, q, r):
+        self.X[self.Pi] = p
+        self.X[self.Qi] = q
+        self.X[self.Ri] = r  
+        
+    def set_body_force(self, bodyForce):
+        self.ecfForce = self.Qe2b * bodyForce * ~self.Qe2b
+        
+    def set_body_moment(self, bodyMoment):
+        self.bodyMoment = bodyMoment
+        
     def Qstate(self,state):
         q0 = state[self.Qni]
         q1 = state[self.Qxi]
         q2 = state[self.Qyi]
         q3 = state[self.Qzi]
-        p = state[self.Pi] - self.Per
-        q = state[self.Qi] - self.Qer
-        r = state[self.Ri] - self.Rer
+        p = state[self.Pi] - self.Planet.bodyRotationQ.x
+        q = state[self.Qi] - self.Planet.bodyRotationQ.y
+        r = state[self.Ri] - self.Planet.bodyRotationQ.z
         return q0, q1, q2, q3, p, q, r
     def QnDot(self, state):
         q0, q1, q2, q3, p, q, r = self.Qstate(state)
@@ -2360,195 +1249,330 @@ class slEarthSim(Simulation):
         return state[self.Vzi]
     
     def VxDot(self, state):
-        w = self.Planet.RotationRate
-        assert self.TotalMass != 0, "VxDot mass is 0"
-        ax = self.QforceEcf.X / self.TotalMass
-        xDot = ax + 2.0 * w * state[self.Vyi] + self.Gx + state[self.Xi] * w**2
+        w = self.Planet.rotationRate_rad_s
+        ax = self.ecfForce.x / self.totalMass_kg
+        gx = self.Planet.gravityQ.x
+        xDot = ax + 2.0 * w * state[self.Vyi] + gx + state[self.Xi] * w**2
         return xDot
     def VyDot(self, state):
-        w = self.Planet.RotationRate
-        assert self.TotalMass != 0, "VyDot mass is 0"
-        ay = self.QforceEcf.Y / self.TotalMass
-        yDot = ay - 2.0 * w * state[self.Vxi] + self.Gy + state[self.Yi] * w**2 
+        w = self.Planet.rotationRate_rad_s
+        ay = self.ecfForce.y / self.totalMass_kg
+        gy = self.Planet.gravityQ.y
+        yDot = ay - 2.0 * w * state[self.Vxi] + gy + state[self.Yi] * w**2 
         return yDot
     def VzDot(self, state):
-        assert self.TotalMass != 0, "VzDot mass is 0"
-        az = self.QforceEcf.Z / self.TotalMass
-        return (az + self.Gz)
+        az = self.ecfForce.z / self.totalMass_kg
+        return (az + self.Planet.gravityQ.z)
     
     def Wstate(self, state):
         P = state[self.Pi]
         Q = state[self.Qi]
         R = state[self.Ri]
-        Jx = self.gvJx
-        Jy = self.gvJy
-        Jz = self.gvJz
-        Jxz = self.gvJxz
+        Jx = self.Jx
+        Jy = self.Jy
+        Jz = self.Jz
+        Jxz = self.Jxz
         Gamma = self.Gamma
-        l = self.aeroBodyMoment.X
-        m = self.aeroBodyMoment.Y
-        n = self.aeroBodyMoment.Z
+        l = self.bodyMoment.x
+        m = self.bodyMoment.y
+        n = self.bodyMoment.z
         return P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n
     def Pdot(self, state):
         P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n = self.Wstate(state)
-        assert Gamma != 0, "Pdot Gamma is 0"
         pDot = (Jxz * (Jx - Jy + Jz)*P*Q - (Jz*(Jz - Jy) + Jxz*Jxz)*Q*R + Jz*l + Jxz*n) / Gamma
         return pDot
     def Qdot(self, state):
         P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n = self.Wstate(state)
-        assert Jy != 0.0, "Qdot Jy is 0"
         qDot = ((Jz - Jx)*P*R - Jxz*(P*P - R*R) + m) / Jy
         return qDot
     def Rdot(self, state):
         P, Q, R, Jx, Jy, Jz, Jxz, Gamma, l, m, n = self.Wstate(state)
-        assert Gamma != 0.0, "Rdot Gamma is 0"
         rDot = (((Jx - Jy)*Jx + Jxz*Jxz)*P*Q - Jxz*(Jx - Jy + Jz)*Q*R + Jxz*l + Jx*n) / Gamma
         return rDot
     
-    def Reset(self, ic):
-        self.ResetSimulation(ic)
+    def true_airspeed(self):
+        vel = Quaternion(0, self.X[self.Vxi], self.X[self.Vyi], self.X[self.Vzi])
+        trueAirspeed = vel.magnitude()
+        return trueAirspeed
+    
+    def body_velocity(self):
+        vel = Quaternion(0, self.X[self.Vxi], self.X[self.Vyi], self.X[self.Vzi])
+        uvw = ~self.Qe2b * vel * self.Qe2b
+        return [uvw.x, uvw.y, uvw.z]
         
-        self.RotationAngle = 0
-        
-        self.Planet.Latitude = self.SetValue("latitude")
-        self.Planet.Longitude = self.SetValue("longitude")
-        self.Planet.Altitude = self.SetValue("altitudeMsl")
-        [x, y, z] = self.Planet.LlaToPcpf()
-        self.Position.X = x
-        self.Position.Y = y
-        self.Position.Z = z
-        
-        # initialize the frd/ecf quaternion
-        roll  = self.BodyAngle.X
-        pitch = self.BodyAngle.Y
-        yaw   = self.BodyAngle.Z
-        lat = self.Planet.Latitude
-        lon = self.Planet.Longitude
-        self.Qe2b.SetQfrdWrtEcf(roll , pitch , yaw, lat, lon)
-        
-        # transform u,v,w to ECEF velocities
-        Vecf = Vector3(0,0,0)
-        Vecf = self.Qe2b * self.BodyVelocity * ~self.Qe2b
-        
-        self.Xdot.clear()
-        self.Xdot = [self.QnDot, self.QxDot, self.QyDot, self.QzDot,
-                     self.PxDot, self.PyDot, self.PzDot,
-                     self.VxDot, self.VyDot, self.VzDot,
-                     self.Pdot, self.Qdot, self.Rdot] 
-        
-        self.X[self.Qni] = self.Qe2b.N
-        self.X[self.Qxi] = self.Qe2b.X
-        self.X[self.Qyi] = self.Qe2b.Y
-        self.X[self.Qzi] = self.Qe2b.Z
-        
-        self.X[self.Xi] = self.Position.X
-        self.X[self.Yi] = self.Position.Y
-        self.X[self.Zi] = self.Position.Z
-        
-        self.X[self.Vxi] = Vecf.X
-        self.X[self.Vyi] = Vecf.Y
-        self.X[self.Vzi] = Vecf.Z
-        print("Vecf: ", Vecf.X, Vecf.Y, Vecf.Z)
-        
-        self.X[self.Pi] = self.BodyAngularRate.X
-        self.X[self.Qi] = self.BodyAngularRate.Y
-        self.X[self.Ri] = self.BodyAngularRate.Z
-        
-    def Operate(self):
-        # create quaternions
- 
-        # TODO: need a check case the Q rotations
+    def integrate(self):
         # set q frd/ecf (e2b) ECF to body
-        self.Qe2b.N = self.X[self.Qni]
-        self.Qe2b.X = self.X[self.Qxi]
-        self.Qe2b.Y = self.X[self.Qyi]
-        self.Qe2b.Z = self.X[self.Qzi]
+        self.Qe2b.n = self.X[self.Qni]
+        self.Qe2b.x = self.X[self.Qxi]
+        self.Qe2b.y = self.X[self.Qyi]
+        self.Qe2b.z = self.X[self.Qzi]
         
-        # set q ned/ecf (e2n) ECF to NED
-        self.Qe2n.SetLatLon(self.Planet.Latitude, self.Planet.Longitude)
+        # get planet rotation in the body frame
+        self.Planet.bodyRotationQ = ~self.Qe2b * self.Planet.rotationQ * self.Qe2b
         
-        # set q frd/ned (n2b) NED to body
-        self.Qn2b = ~self.Qe2n * self.Qe2b
-        
-        # get the euler angles from the quaternion
-        [roll, pitch, yaw] = self.Qn2b.EulerAnglesFromQ()
-        
-        # rotate the ECF position to ECI to get the inertial position
-        self.Qi2e.SetPlanetRotation(self.RotationAngle)
-        qgePosition = Quaternion( 0, self.X[self.Xi], self.X[self.Yi], self.X[self.Zi] )
-        qeiPosition = self.Qi2e * qgePosition * ~self.Qi2e
-        
-        # save output data
-        self.RecData.Add('altitudeMsl_m', self.Planet.Altitude)
-        self.RecData.Add('latitude_rad', self.Planet.Latitude)
-        self.RecData.Add('longitude_rad', self.Planet.Longitude)
-        self.RecData.Add('gePosition_m_X', self.X[self.Xi])
-        self.RecData.Add('gePosition_m_Y', self.X[self.Yi])
-        self.RecData.Add('gePosition_m_Z', self.X[self.Zi])
-        self.RecData.Add('eulerAngle_rad_Roll', roll)
-        self.RecData.Add('eulerAngle_rad_Pitch', pitch)
-        self.RecData.Add('eulerAngle_rad_Yaw', yaw)
-        self.RecData.Add('trueAirspeed_m_s', self.TrueAirspeed)
-        self.RecData.Add('eiPosition_m_X', qeiPosition.X)
-        self.RecData.Add('eiPosition_m_Y', qeiPosition.Y)
-        self.RecData.Add('eiPosition_m_Z', qeiPosition.Z)
-        
-        # get earth rotation in the body frame
-        wEarthFrd = ~self.Qe2b * self.EarthRotation * self.Qe2b
-        
-        # set the Earth rotation in the body frame
-        self.Per = wEarthFrd.X
-        self.Qer = wEarthFrd.Y
-        self.Rer = wEarthFrd.Z
-        
+        # get X, Y, Z in in the ECF frame to calculate gravity
         x = self.X[self.Xi]
         y = self.X[self.Yi]
         z = self.X[self.Zi]
-        [self.Gx, self.Gy, self.Gz] = self.Planet.GravityJ2( x, y, z )
-        g = Vector3(self.Gx, self.Gy, self.Gz)
-        self.RecData.Add('localGravity_m_s2', g.Magnitude())
-
-        # integrate the equations
-        self.X = self.Integrator.RungeKutta4(self.timeStep, self.Xdot, self.X)
+        [gx, gy, gz] = self.Planet.gravity_J2( x, y, z )
+        self.Planet.gravityQ = Quaternion(0, gx, gy, gz)
         
-        # advance time and set up for next integration
-        self.AdvanceTime()
-        
-        # Compute the aerodynamic loads from the DAVE-ML model
-        #  set the DAVE-ML model inputs
-        vel = Vector3(self.X[self.Vxi], self.X[self.Vyi], self.X[self.Vzi])
-        self.TrueAirspeed = vel.Magnitude()
-        assert self.TrueAirspeed != 0, "TrueAirspeed is 0 to model"
-        # calculate alpha and beta
-        uvw = ~self.Qe2b * vel * self.Qe2b
-        self.Data["angleOfAttack"] = math.atan2(uvw.Z, uvw.X)
-        self.Data["angleOfSideslip"] = math.atan2(uvw.Y, math.sqrt(uvw.X**2 + uvw.Z**2))
-        self.Data["trueAirspeed"] = self.TrueAirspeed * self.MeterToFeet
-        self.Data["bodyAngularRate_Roll"] = self.X[self.Pi]
-        self.Data["bodyAngularRate_Pitch"] = self.X[self.Qi]
-        self.Data["bodyAngularRate_Yaw"] = self.X[self.Ri]
-        self.EvaluateAeroModel()
+        # integrate the equations of motion
+        self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
         
         # get dynamic pressure:  q = 1/2 rho v^2
         dynamicPressure = (
-            self.Planet.DynamicPressure(self.Planet.Altitude, self.TrueAirspeed)
+            self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.true_airspeed())
         )
-        self.RecData.Add('speedOfSound_m_s', self.Planet.speedOfSoundMps)
+        
+        return dynamicPressure
+        
+###############################################################################
+class Simulation(Convert):
+    IC = {}
+    Data = {}
+    
+    Planet = None
+    Eom = None
+    
+    AeroModel = daveML.Model()
+    EngineModel = daveML.Model()
+    
+    aeroBodyForce = Quaternion() 
+    aeroBodyMoment = Quaternion()
+    thrustBodyForce = Quaternion()
+    thrustBodyMoment = Quaternion()
+    bodyForce = Quaternion()
+    bodyMoment = Quaternion()
+    
+    Imperial = {}
+    
+    SetupString = ""
+    
+    def __init__(self, arg):
+        self.AeroModel.Defined = False
+        self.EngineModel.Defined = False
+        
+        arglc = arg.lower()
+        
+        planet = "EARTH"
+        if arglc.find('mars') != -1:
+            planet = "MARS"
+            self.Planet = Mars()
+        elif arglc.find('moon') != -1:
+            planet = "MOON"
+            self.Planet = Moon()
+        else:
+            self.Planet = Earth()
+            
+        eom = "OBLATE"
+        if arglc.find('flat') != -1:
+            eom = "FLAT"
+            self.Eom = FlatEom(self.Planet)
+        else:
+            self.Eom = OblateEom(self.Planet)
+            
+        self.SetupString = "-- " + eom + " : " + planet + " --"
+        #print("-- ", eom, " : ", planet, " --")
+            
+        self.clear_data()
+        
+    def clear_data(self):
+        self.Data.clear()
+        self.IC.clear()
+        self.Imperial.clear()
+        
+    def set_ic(self, inIC):
+        """Convert initial conditions to SI.
+        
+        Args:
+            inIC: initial conditions.
+        """
+        icData = {}
+        for key, value in inIC.items():
+            icData[key] = self.to_si(value)
 
-        # Get the qS factor for getting dimensional forces and moments
-        qS = dynamicPressure * self.ReferenceWingArea
+        return icData
+    
+    def set_value(self, label, defValue = 0):
+        value = 0.0
+        infoStr = "none"
         
+        if label in self.IC:
+            value = self.IC[label]
+            infoStr = "[IC case]"
+        elif self.AeroModel.HasName(label):
+            valueRaw = self.AeroModel.DataFromName(label)
+            units = self.AeroModel.Units(label)
+            value = self.to_si([valueRaw, units])
+            infoStr = "[DML model]"
+        else:
+            value = defValue
+            infoStr = "[default]"
+        print("++", label, "=", value, infoStr)
+        return value
+    
+    def create_imperial_data(self, impList):
+        self.Imperial['time'] = self.Eom.Metric['time']
+        for key in impList:
+            self.Imperial[key] = []
+            oUnit = impList[key][0]
+            iUnit = impList[key][1]
+            siKey = key.replace('_' + oUnit, '_' + iUnit)
+            
+            for d in self.Eom.Metric[siKey]:
+                value = [d, iUnit]
+                self.Imperial[key].append(self.units(value, oUnit))
+    
+    def calc_aero_body_forces(self, qS):
         # compute the aero forces in the body frame
-        self.CalcAeroBodyForces(qS)
+        self.aeroBodyForce.x = ( 
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X") 
+        )
+        self.aeroBodyForce.y = (
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y") 
+        )
+        self.aeroBodyForce.z = (
+            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z") 
+        )
         
-        # rotate body forces to the ECEF frame
-        self.QforceEcf = self.Qe2b * self.aeroBodyForce * ~self.Qe2b
-        
+    def calc_aero_body_moments(self, qS):
         # calculate the dimensional aero moments
-        self.CalcAeroBodyMoments(qS)
+        self.aeroBodyMoment.x = (qS * self.referenceWingSpan  
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
+        self.aeroBodyMoment.y = (qS * self.referenceWingChord 
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
+        self.aeroBodyMoment.z = (qS * self.referenceWingSpan  
+                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
         
-        # update the latitude, longitude and altitude from ECEF X, Y, Z position
-        self.Planet.PcpfToLlaZhu(self.X[self.Xi], self.X[self.Yi], self.X[self.Zi])
+    def set_aero_model(self, aeroModelFile, debugModel = False):
+        self.AeroModel.LoadDml(aeroModelFile, debugModel)
         
-        # rotate the earth
-        self.RotationAngle = self.Planet.RotationRate * self.Time
+    def set_engine_model(self, engineModelFile, debugModel = False):
+        self.EngineModel.LoadDml(engineModelFile, debugModel)
+        
+    def set_aero_inputs(self):
+        pass
+    
+    def set_engine_inputs(self):
+        pass
+    
+    def reset(self, ic):
+        print(self.SetupString)
+        
+        self.clear_data()
+    
+        self.IC.clear()
+        self.IC = self.set_ic(ic)
+        
+        self.Eom.init()
+        self.Eom.timeStep_s = self.set_value("timeStep", 0.1)
+        
+        self.Eom.totalMass_kg = self.set_value("totalMass", 1)
+        assert self.Eom.totalMass_kg != 0, "totalMass is 0"
+        
+        self.referenceWingSpan = self.set_value("referenceWingSpan")
+        self.referenceWingChord = self.set_value("referenceWingChord")
+        self.referenceWingArea = self.set_value("referenceWingArea")
+        
+        self.AeroModel.Set("aeroBodyForceCoefficient_X")
+        self.AeroModel.Set("aeroBodyForceCoefficient_Y")
+        self.AeroModel.Set("aeroBodyForceCoefficient_Z")
+
+        self.AeroModel.Set("aeroBodyMomentCoefficient_Roll")
+        self.AeroModel.Set("aeroBodyMomentCoefficient_Pitch")
+        self.AeroModel.Set("aeroBodyMomentCoefficient_Yaw")
+        
+        trueAirspeed = self.set_value("trueAirspeed")
+        
+        self.Eom.Planet.rotationAngle_rad = 0
+        self.Eom.Planet.rotationQ = Quaternion(0, 0, 0, self.Planet.rotationRate_rad_s)
+        self.Eom.Planet.trueAirspeed_m_s = trueAirspeed
+        self.Eom.Planet.latitude_rad = self.set_value("latitude")
+        self.Eom.Planet.longitude_rad = self.set_value("longitude")
+        self.Eom.Planet.altitudeMsl_m = self.set_value("altitudeMsl")
+        self.Eom.Planet.fePosition_m_X = self.set_value("fePosition_m_X")
+        self.Eom.Planet.fePosition_m_Y = self.set_value("fdPosition_m_Y")
+        self.Eom.set_position()
+        
+        # Set the Euler angles
+        rollEulerAngle  = self.set_value("eulerAngle_Roll")
+        pitchEulerAngle = self.set_value("eulerAngle_Pitch")
+        yawEulerAngle   = self.set_value("eulerAngle_Yaw")
+        self.Eom.set_body_angle( rollEulerAngle, pitchEulerAngle, yawEulerAngle )
+        
+        angleOfAttack = self.set_value("angleOfAttack")
+        angleOfSideslip = self.set_value("angleOfSideslip")
+        u = trueAirspeed * math.cos(angleOfAttack) * math.cos(angleOfSideslip);
+        v = trueAirspeed * math.sin(angleOfSideslip);
+        w = trueAirspeed * math.sin(angleOfAttack) * math.cos(angleOfSideslip);
+        self.Eom.set_body_velocity(u, v, w)
+        
+        # Set angular rates
+        P = self.set_value("eulerAngleRate_Roll")
+        Q = self.set_value("eulerAngleRate_Pitch")
+        R = self.set_value("eulerAngleRate_Yaw")
+        self.Eom.set_body_angular_rate(P, Q, R)
+        
+        # Set the inertia matrix
+        Jx = self.set_value("bodyMomentOfInertia_X")
+        Jy = self.set_value("bodyMomentOfInertia_Y")
+        Jz = self.set_value("bodyMomentOfInertia_Z")
+        Jxz = -self.set_value("bodyProductOfInertia_XZ")
+        self.Eom.Jx = Jx
+        self.Eom.Jy = Jy
+        self.Eom.Jz = Jz
+        self.Eom.Jxz = Jxz
+        self.Eom.Gamma = (Jx*Jz) - (Jxz*Jxz)
+        assert self.Eom.Gamma != 0, "Gamma is 0"
+        
+    def operate(self):
+        self.Eom.pre_process()
+        
+        dynamicPressure = self.Eom.integrate()
+          
+        # Get the qS factor for getting dimensional forces and moments
+        qS = dynamicPressure * self.referenceWingArea
+        
+        # Compute the aerodynamic loads from the DAVE-ML model
+        if ( self.AeroModel.Defined ):
+            self.set_aero_inputs()
+            
+            self.AeroModel.Update(self.Data)
+            
+            # compute the aero forces in the body frame
+            self.calc_aero_body_forces(qS)
+            
+            # save the aero force data
+            self.Eom.record_data('aero_bodyForce_N_X', self.aeroBodyForce.x)
+            self.Eom.record_data('aero_bodyForce_N_Y', self.aeroBodyForce.y)
+            self.Eom.record_data('aero_bodyForce_N_Z', self.aeroBodyForce.z)
+    
+            # calculate the dimensional aero moments
+            self.calc_aero_body_moments(qS)
+        
+        # Compute the engine model loads from the DAVE-ML model
+        if ( self.EngineModel.Defined ):
+            self.set_engine_inputs()
+        
+            self.EngineModel.Update(self.Data)
+            
+            # calculate engine forces
+        
+            # calculate engine moments
+        
+        # total body forces
+        bodyForce = self.aeroBodyForce + self.thrustBodyForce
+        self.Eom.set_body_force(bodyForce)
+        
+        # total body moments
+        bodyMoment = self.aeroBodyMoment + self.thrustBodyMoment
+        self.Eom.set_body_moment(bodyMoment)
+        
+        self.Eom.post_process()
+        
+    def run(self, numberOfSeconds):
+        endTime = int(numberOfSeconds / self.Eom.timeStep_s) + 1
+        for i in range(endTime):
+            self.operate()
+        print("======done=======")

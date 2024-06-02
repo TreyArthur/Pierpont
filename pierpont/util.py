@@ -1,7 +1,7 @@
 import csv
 import math
 
-def MinDeltaAngleDeg(angle1, angle2):
+def min_delta_angle_deg(angle1, angle2):
     """Returns the minimum delta between two angles.
     
     Examples:  
@@ -17,8 +17,7 @@ def MinDeltaAngleDeg(angle1, angle2):
     return delta
 
 ###############################################################################
-
-def GetDataNorms(data, checkData, isAng):
+def get_data_norms(data, checkData, isAng):
     """Calculates the L2 and L-infinity norms from two data sets. """
     l2Sum = 0
     manSum = 0
@@ -26,7 +25,7 @@ def GetDataNorms(data, checkData, isAng):
     for (x, y) in zip(data, checkData):
         dxy = x - y
         if isAng:
-            dxy = MinDeltaAngleDeg( x, y )
+            dxy = min_delta_angle_deg( x, y )
         l2Sum += dxy**2
         dist = abs(dxy)
         
@@ -36,8 +35,7 @@ def GetDataNorms(data, checkData, isAng):
     return math.sqrt(l2Sum), infNorm
 
 ###############################################################################
-
-def Frechet(px, py, qx, qy):
+def frechet(px, py, qx, qy):
     """Computes the Fechet distance.
     
     Frechet distance can be used to compare two curves.  This measure is 
@@ -64,7 +62,7 @@ def Frechet(px, py, qx, qy):
     
     for i in range(lenP):
         for j in range(lenQ):
-            d = math.sqrt((px[i]-qx[i])**2 + (py[i]-qy[i])**2)
+            d = math.sqrt((px[i]-qx[j])**2 + (py[i]-qy[j])**2)
 
             if i > 0 and j > 0:
                 ca[i][j] = max(min(ca[i - 1][j],
@@ -79,48 +77,7 @@ def Frechet(px, py, qx, qy):
     return ca[lenP - 1][lenQ - 1]
 
 ###############################################################################
-
-def CheckFrechet():
-    """Check out the Frechet distance with known data. """
-    tPass = 0
-    tFail = 0
-    def Test(a, b, tp, tf):
-        tpr = 0
-        tfr = 0
-        if math.isclose(a, b):
-            tpr = tp + 1
-        else:
-            tfr = tf + 1
-        return tpr, tfr
-            
-    px = [0.0, 1.0, 2.0, 3.0, 4.0]
-    py = [0.0, 0.0, 0.0, 0.0, 0.0]
-    qx = [0.0, 1.0, 2.0, 3.0, 4.0]
-    qy = [1.0, 1.1, 1.2, 1.1, 1.0]
-    fd = Frechet(px, py, qx, qy)
-    tPass, tFail = Test(1.2, fd, tPass, tFail) 
-
-    px = [1.0, 2.0, 2.0]
-    py = [1.0, 2.0, 2.0]
-    qx = [1.0, 2.0, 2.0]
-    qy = [1.0, 2.0, 2.0]
-    fd = Frechet(px, py, qx, qy)
-    tPass, tFail = Test(0.0, fd, tPass, tFail)
-
-    px = [1.0, 2.0, 2.0]
-    py = [1.0, 1.0, 2.0]
-    qx = [2.0, 0.0, 2.0]
-    qy = [2.0, 1.0, 4.0]
-    fd = Frechet(px, py, qx, qy)
-    tPass, tFail = Test(2.0, fd, tPass, tFail)
-    
-    print("----> Frechet Test Results <----")
-    print(" passed tests: ", tPass)
-    print(" failed tests: ", tFail)
-
-###############################################################################
-
-def GetNESCData(fileName):
+def get_NESC_data(fileName):
     """Loads NESC check data from .csv files."""
     # open the CSV file as read-only
     csvFile = open(fileName,'r')
@@ -144,8 +101,7 @@ def GetNESCData(fileName):
     return Data
 
 ###############################################################################
-
-def PrintErrorTable(tableTitle, labels, simData, checkData):
+def print_error_table(tableTitle, labels, simData, checkData):
     """Print table comparing computed data to NESC check data."""
     print("====================")
     print(tableTitle)
@@ -153,12 +109,13 @@ def PrintErrorTable(tableTitle, labels, simData, checkData):
     print ("{:<25} {:<7} {:<7} {:<7}".format('--------', '--', '-----','--------'))
     barLinf = {}
     for i in labels:
-        tmpDist = GetDataNorms(checkData[i], simData.RecData.Imperial[i], i.find("_deg_"))
+        tmpDist = get_data_norms(checkData[i], simData.Imperial[i], i.find("_deg_"))
         td0 = round(tmpDist[0], 3)
         td1 = round(tmpDist[1], 3)
-        #fd = Frechet(checkData['time'], checkData[i], 
-        #             simData.ImperialData['time'], simData.ImperialData[i])
-        #fd1 = round(tmpDist[1], 4)
-        print ("{:<25} {:<7} {:<7} {:<7}".format(i, td0, td1, "NC"))
+        #fd1 = "NC"
+        fd = frechet(checkData['time'], checkData[i], 
+                     simData.Imperial['time'], simData.Imperial[i])
+        fd1 = round(tmpDist[1], 4)
+        print ("{:<25} {:<7} {:<7} {:<7}".format(i, td0, td1, fd1))
         barLinf[i] = tmpDist[1]
     return

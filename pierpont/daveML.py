@@ -34,6 +34,10 @@ class Model:
     UgtDef = []
     FunctionDef = []
     
+    Inputs = []
+    
+    Defined = False
+    
     class ppVariableDef:
         name = None
         varID = None
@@ -178,6 +182,7 @@ class Model:
     def Clear(self):
         """Clear all of the data in the class."""
         self.Data.clear()
+        self.Inputs.clear()
         self.NameToId.clear()
         self.IdToName.clear()
         self.VarDef.clear()
@@ -192,6 +197,7 @@ class Model:
             f.Clear()
         self.FunctionDef.clear()
         self.CheckData.Clear()
+        self.Defined = False
         
     def HasName(self, inName):
         """Check if name is in the model."""
@@ -244,7 +250,8 @@ class Model:
         print("+++++ MODEL INPUTS AND OUTPUTS +++++")
         for v in self.VarDef:
             if v.isInput:
-                print("++> Input: ", v.varID)
+                self.Inputs.append( v.name )
+                print("++> Input: ", v.name, "(", v.varID, ")")
             if v.isOutput:
                 print("++> Output: ", v.varID)
         print("++++++++++++++++++++++++++++++++++++")
@@ -280,8 +287,11 @@ class Model:
             indexMax.reverse()
             f.imax = indexMax
             
-    def Update(self):
+    def Update(self, data):
         """Update all the values in the model."""
+        
+        for d in self.Inputs:
+            self.Set(d, data[d])
         
         # Evaluate the MATH-ML equations and functions
         for v in self.VarDef:
@@ -544,7 +554,10 @@ class Model:
                     self.Data[signal.varID] = float(signal.signalValue)
 
                 if signal.signalType != prevSignalType:
-                    self.Update()
+                    inData = {}
+                    for id in self.Inputs:
+                        inData[id] = self.Data[ self.NameToId[id] ]
+                    self.Update(inData)
 
                 if signal.signalType == self.Tag("internalValues"):
                     modelValue = self.Data[signal.varID]
@@ -568,6 +581,8 @@ class Model:
         """Pass in DAVE-ML model format file"""
 
         self.Clear()
+        
+        self.Defined = True
 
         root = ET.parse(dmlFile).getroot()
 
