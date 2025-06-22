@@ -1,0 +1,374 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc 
+      PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN" 
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="Quadcopter">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MHampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2025-05-04"/>
+
+    <fileVersion>$ Revision: 1 $</fileVersion>
+
+    <description>
+      A quadcopter.
+    </description>
+  </fileHeader>
+
+
+  <variableDef name="totalMass" varID="mass" units="kg" initialValue="0.5">
+    <description>
+      Total mass of 0.5 kg
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="kgm2" initialValue="0.005">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="kgm2" initialValue="0.005">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="kgm2" initialValue="0.01">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="armLength" varID="arml" units="m" initialValue="0.225">
+    <description>arm length of the quadcopter</description>
+  </variableDef>
+
+  <variableDef name="thrustCoefficient" varID="kThrust" units="nd" initialValue="3e-6">
+    <description>thrust coefficient</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="torqueCoefficient" varID="kTorque" units="nd" initialValue="1e-7">
+    <description>torque coefficient</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="roll damping from roll rate" varID="CLP_DAMPING" units="_rad" initialValue="-1.0">
+    <description>Constant fake roll damping due to roll rate of brick test vehicle</description>
+  </variableDef>
+
+  <variableDef name="roll damping from yaw rate" varID="CLR_DAMPING" units="_rad" initialValue="0.0">
+    <description>Constant fake roll damping due to yaw rate of brick test vehicle</description>
+  </variableDef>
+
+  <variableDef name="pitch damping from pitch rate" varID="CMQ_DAMPING" units="_rad" initialValue="-1.0">
+    <description>Constant fake pitch damping of brick test vehicle</description>
+  </variableDef>
+
+  <variableDef name="yaw damping from roll rate" varID="CNP_DAMPING" units="_rad" initialValue="0.0">
+    <description>Constant fake yaw damping due to roll rate of brick test vehicle</description>
+  </variableDef>
+
+  <variableDef name="yaw damping from yaw rate" varID="CNR_DAMPING" units="_rad" initialValue="-1.0">
+    <description>Constant fake yaw damping due to yaw rate of brick test vehicle</description>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--       Inputs       -->
+  <!-- ================== -->
+
+  <variableDef name="trueAirspeed" varID="VRW" units="ft_s" minValue="0.5">
+    <description>Velocity of vehicle w.r.t. airmass, ft/sec (always +)</description>
+    <isInput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyAngularRate_Roll" varID="PB" units="rad_s" sign="RWD">
+    <description>Body-axis roll rate, radians/sec (+right wing down)</description>
+    <isInput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyAngularRate_Pitch" varID="QB" units="rad_s" sign="ANU">
+    <description>Body-axis pitch rate, radians/sec (+aircraft nose up)</description>
+    <isInput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyAngularRate_Yaw" varID="RB" units="rad_s" sign="ANR">
+    <description>Body-axis yaw rate, radians/sec (+aircraft nose right)</description>
+    <isInput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!-- Intermediate calcs -->
+  <!-- ================== -->
+
+  <variableDef name="PBO2V" varID="PBO2V" units="nd">
+    <description>Non-dimensionalized body roll rate w.r.t. airmass</description>
+    <calculation>
+      <python>({BSPAN} * {PB}) / (2.0 * {VRW})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <divide/>
+          <apply>
+            <times/>
+            <ci>PB</ci>
+            <ci>BSPAN</ci>
+          </apply>
+          <apply>
+            <times/>
+            <cn>2.0</cn>
+            <ci>VRW</ci>
+          </apply>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="QCO2V" varID="QCO2V" units="nd">
+    <description>Non-dimensionalized body pitch rate w.r.t. airmass</description>
+    <calculation>
+      <python>({CBAR} * {QB}) / (2.0 * {VRW})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <divide/>
+          <apply>
+            <times/>
+            <ci>QB</ci>
+            <ci>CBAR</ci>
+          </apply>
+          <apply>
+            <times/>
+            <cn>2.0</cn>
+            <ci>VRW</ci>
+          </apply>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <variableDef name="RBO2V" varID="RBO2V" units="nd">
+    <description>Non-dimensionalized body yaw rate w.r.t. airmass</description>
+    <calculation>
+      <python>({BSPAN} * {RB}) / (2.0 * {VRW})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <divide/>
+          <apply>
+            <times/>
+            <ci>RB</ci>
+            <ci>BSPAN</ci>
+          </apply>
+          <apply>
+            <times/>
+            <cn>2.0</cn>
+            <ci>VRW</ci>
+          </apply>
+        </apply>
+      </math>
+    </calculation>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--       Outputs      -->
+  <!-- ================== -->
+  
+  <variableDef name="aeroBodyMomentCoefficient_Roll" varID="Cl" units="nd">
+    <description>Cl = Clp*pb/2V + Clr*rb/2V</description>
+    <calculation>
+      <python>({CLP_DAMPING} * {PBO2V}) + ({CLR_DAMPING} * {RBO2V})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <plus/>
+          <apply>
+            <times/>
+            <ci>CLP_DAMPING</ci>
+            <ci>PBO2V</ci>
+          </apply>
+          <apply>
+            <times/>
+            <ci>CLR_DAMPING</ci>
+            <ci>RBO2V</ci>
+          </apply>
+        </apply>
+      </math>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Pitch" varID="Cm" units="nd">
+    <description>Cm = Cmq*qc/2V</description>
+    <calculation>
+      <python>({CMQ_DAMPING} * {QCO2V})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <times/>
+          <ci>CMQ_DAMPING</ci>
+          <ci>QCO2V</ci>
+        </apply>
+      </math>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Yaw" varID="Cn" units="nd">
+    <description>Cn = Cnp*pb/2V + Cnr*rb/2V</description>
+    <calculation>
+      <python>({CNP_DAMPING} * {PBO2V}) + ({CNR_DAMPING} * {RBO2V})</python>
+      <math xmlns="http://www.w3.org/1998/Math/MathML">
+        <apply>
+          <plus/>
+          <apply>
+            <times/>
+            <ci>CNP_DAMPING</ci>
+            <ci>PBO2V</ci>
+          </apply>
+          <apply>
+            <times/>
+            <ci>CNR_DAMPING</ci>
+            <ci>RBO2V</ci>
+          </apply>
+        </apply>
+      </math>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ===================== -->
+  <!--       Check Data      -->
+  <!-- ===================== -->
+
+  <checkData>
+    <staticShot name="Nominal">
+
+      <!-- Input data for checks -->
+
+      <checkInputs>
+        <signal>
+          <signalName>trueAirspeed</signalName>
+          <varID>VRW</varID>
+          <signalValue>10.0</signalValue>
+          <signalUnits>ft_s</signalUnits>
+        </signal>
+        <signal>
+          <signalName>bodyAngularRate_Roll</signalName>
+          <varID>PB</varID>
+          <signalValue>0.3</signalValue>
+          <signalUnits>rad_s</signalUnits>
+        </signal>
+        <signal>
+          <signalName>bodyAngularRate_Pitch</signalName>
+          <varID>QB</varID>
+          <signalValue>1.5</signalValue>
+          <signalUnits>rad_s</signalUnits>
+        </signal>
+        <signal>
+          <signalName>bodyAngularRate_Yaw</signalName>
+          <varID>RB</varID>
+          <signalValue>0.6</signalValue>
+          <signalUnits>rad_s</signalUnits>
+        </signal>
+      </checkInputs>
+
+      <!-- Check Internal Values -->
+
+      <internalValues>
+        <signal>
+          <signalName>referenceWingArea</signalName>
+          <varID>SWING</varID>
+          <signalValue>0.22222</signalValue>
+          <signalUnits>ft2</signalUnits>
+          <tol>1e-5</tol>
+        </signal>
+        <signal>
+          <signalName>referenceWingSpan</signalName>
+          <varID>BSPAN</varID>
+          <signalValue>0.33333</signalValue>
+          <signalUnits>ft</signalUnits>
+          <tol>1e-5</tol>
+        </signal>
+        <signal>
+          <signalName>referenceWingChord</signalName>
+          <varID>CBAR</varID>
+          <signalValue>0.66667</signalValue>
+          <signalUnits>ft</signalUnits>
+          <tol>1e-5</tol>
+        </signal>
+        <signal>
+          <signalName>roll damping from roll rate</signalName>
+          <varID>CLP_DAMPING</varID>
+          <signalValue>-1.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>roll damping from yaw rate</signalName>
+          <varID>CLR_DAMPING</varID>
+          <signalValue>0.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>pitch damping from pitch rate</signalName>
+          <varID>CMQ_DAMPING</varID>
+          <signalValue>-1.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>yaw damping from roll rate</signalName>
+          <varID>CNP_DAMPING</varID>
+          <signalValue>0.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>yaw damping from yaw rate</signalName>
+          <varID>CNR_DAMPING</varID>
+          <signalValue>-1.0</signalValue>
+        </signal>
+        <signal>
+          <signalName>PBO2V</signalName>
+          <varID>PBO2V</varID>
+          <signalValue>0.005</signalValue>
+        </signal>
+        <signal>
+          <signalName>QCO2V</signalName>
+          <varID>QCO2V</varID>
+          <signalValue>0.05</signalValue>
+        </signal>
+        <signal>
+          <signalName>RBO2V</signalName>
+          <varID>RBO2V</varID>
+          <signalValue>0.01</signalValue>
+        </signal>
+      </internalValues>
+
+      <!-- Check Outputs -->
+
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>Cl</varID>
+          <signalValue>-0.005</signalValue>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>Cm</varID>
+          <signalValue>-0.05</signalValue>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>Cn</varID>
+          <signalValue>-0.01</signalValue>
+        </signal>
+      </checkOutputs>
+
+    </staticShot>
+  </checkData>
+</DAVEfunc>

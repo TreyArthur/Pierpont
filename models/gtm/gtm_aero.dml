@@ -1,0 +1,1249 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN"  
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="GTM Aerodynamic Model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MS 152 NASA, Hampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2025-04-18"/>
+    <fileVersion>Version: 001</fileVersion>
+
+    <description>
+      An implementation of the GTM model as described in the paper:  A Generic Nonlinear Aerodynamic Model for Aircraft, Grauer and Morelli, 2014
+    </description>
+  </fileHeader>
+
+  <!-- ================== -->
+  <!--  Input variables   -->
+  <!-- ================== -->
+
+  <variableDef name="angleOfAttack" varID="alpha_deg" units="deg" symbol="&#x3B1;">
+    <description> Instantaneous true angle-of-attack, in degrees </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="angleOfSideslip" varID="beta_deg" units="deg" symbol="&#x3B2;"
+               sign="wind in right ear">
+    <description> Instantaneous true angle-of-sideslip, in degrees </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="rollBodyRate" varID="p_deg_s" units="deg_s" sign="right wing down"
+               symbol="p">
+    <description> Body roll rate, rad/sec </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="pitchBodyRate" varID="q_deg_s" units="deg_s" sign="aircraft nose up"
+               symbol="q">
+    <description> Body pitch rate, rad/sec </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="yawBodyRate" varID="r_deg_s" units="deg_s" sign="aircraft nose right"
+               symbol="r">
+    <description> Body yaw rate, rad/sec </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="elevatorDeflection" varID="el_deg" units="deg" sign="trailing edge down"
+               symbol="&#x3B4;e">
+    <description> Elevator deflection angle, in degrees (+TED) </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aileronDeflection" varID="ail_deg" units="deg" sign="left roll" symbol="&#x3B4;a">
+    <description> Aileron deflection angle, in degrees (+LWD) </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="rudderDeflection" varID="rdr_deg" units="deg" sign="TEL" symbol="&#x3B4;r">
+    <description> Rudder deflection angle, in degrees (+TEL) </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--      Constants     -->
+  <!-- ================== -->
+
+  <variableDef name="dtr" varID="dtr" units="rad_deg" initialValue="0.01745329">
+    <description> Conversion constant from radians to degrees </description>
+  </variableDef>
+
+  <variableDef name="totalMass" varID="XMASS" units="slug" initialValue="1.55404754">
+    <description>
+      Total mass of GTM (50 lbm)
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="slugft2" initialValue="1.327">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="slugft2" initialValue="4.254">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="slugft2" initialValue="5.454">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyProductOfInertia_XZ" varID="IXZ" units="slugft2" initialValue="0.120">
+    <description>
+      XZ moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingChord" varID="cbar" units="ft" initialValue="0.915">
+    <description> Length of aerodynamic chord, ft </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingSpan" varID="bspan" units="ft" initialValue="6.849">
+    <description> Length of aerodynamic span, ft </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="referenceWingArea" varID="SWING" units="ft2" initialValue="5.902">
+    <description>Reference area of cannonball (assumed radius is 3")</description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="XBodyPositionOfMRC" varID="xcgr" units="nd" initialValue="0.25">
+    <description> 
+      Default location of center of gravity relative to wing leading
+      edge, expressed as a fraction of aerodynamic chord length.
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ============================ -->
+  <!--  Theta parameters variables  -->
+  <!-- ============================ -->
+
+  <variableDef name="k1" varID="k1" units="nd" initialValue="0.019"></variableDef>
+  <variableDef name="k2" varID="k2" units="nd" initialValue="-0.078"></variableDef>
+  <variableDef name="k3" varID="k3" units="nd" initialValue="-27.42"></variableDef>
+  <variableDef name="k4" varID="k4" units="nd" initialValue="0.293"></variableDef>
+  <variableDef name="k5" varID="k5" units="nd" initialValue="3.420"></variableDef>
+  <variableDef name="k6" varID="k6" units="nd" initialValue="288.2"></variableDef>
+  <variableDef name="k7" varID="k7" units="nd" initialValue="-0.040"></variableDef>
+  <variableDef name="k8" varID="k8" units="nd" initialValue="1.819"></variableDef>
+  <variableDef name="k9" varID="k9" units="nd" initialValue="-355.3"></variableDef>
+  <variableDef name="k10" varID="k10" units="nd" initialValue="-6.563"></variableDef>
+  
+  <variableDef name="k11" varID="k11" units="nd" initialValue="-1.003"></variableDef>
+  <variableDef name="k12" varID="k12" units="nd" initialValue="0.033"></variableDef>
+  <variableDef name="k13" varID="k13" units="nd" initialValue="0.952"></variableDef>
+  <variableDef name="k14" varID="k14" units="nd" initialValue="-0.009"></variableDef>
+  <variableDef name="k15" varID="k15" units="nd" initialValue="0.253"></variableDef>
+  
+  <variableDef name="k16" varID="k16" units="nd" initialValue="0.016"></variableDef>
+  <variableDef name="k17" varID="k17" units="nd" initialValue="5.343"></variableDef>
+  <variableDef name="k18" varID="k18" units="nd" initialValue="30.78"></variableDef>
+  <variableDef name="k19" varID="k19" units="nd" initialValue="0.396"></variableDef>
+  <variableDef name="k20" varID="k20" units="nd" initialValue="12.03"></variableDef>
+  <variableDef name="k21" varID="k21" units="nd" initialValue="0.506"></variableDef>
+  <variableDef name="k22" varID="k22" units="nd" initialValue="-36.30"></variableDef>
+  <variableDef name="k23" varID="k23" units="nd" initialValue="46.13"></variableDef>
+
+  <variableDef name="k24" varID="k24" units="nd" initialValue="-0.109"></variableDef>
+  <variableDef name="k25" varID="k25" units="nd" initialValue="-0.366"></variableDef>
+  <variableDef name="k26" varID="k26" units="nd" initialValue="0.061"></variableDef>
+  <variableDef name="k27" varID="k27" units="nd" initialValue="-0.079"></variableDef>
+  <variableDef name="k28" varID="k28" units="nd" initialValue="0.021"></variableDef>
+  
+  <variableDef name="k29" varID="k29" units="nd" initialValue="0.182"></variableDef>
+  <variableDef name="k30" varID="k30" units="nd" initialValue="-1.782"></variableDef>
+  <variableDef name="k31" varID="k31" units="nd" initialValue="-44.34"></variableDef>
+  <variableDef name="k32" varID="k32" units="nd" initialValue="-1.785"></variableDef>
+  <variableDef name="k33" varID="k33" units="nd" initialValue="374.0"></variableDef>
+  <variableDef name="k34" varID="k34" units="nd" initialValue="-1748."></variableDef>
+  <variableDef name="k35" varID="k35" units="nd" initialValue="2.439"></variableDef>
+  <variableDef name="k36" varID="k36" units="nd" initialValue="1949."></variableDef>
+  <variableDef name="k37" varID="k37" units="nd" initialValue="-0.038"></variableDef>
+  <variableDef name="k38" varID="k38" units="nd" initialValue="0.803"></variableDef>
+  
+  <variableDef name="k39" varID="k39" units="nd" initialValue="0.183"></variableDef>
+  <variableDef name="k40" varID="k40" units="nd" initialValue="-0.022"></variableDef>
+  <variableDef name="k41" varID="k41" units="nd" initialValue="-0.405"></variableDef>
+  <variableDef name="k42" varID="k42" units="nd" initialValue="-0.009"></variableDef>
+  <variableDef name="k43" varID="k43" units="nd" initialValue="-0.129"></variableDef>
+  <variableDef name="k44" varID="k44" units="nd" initialValue="0.184"></variableDef>
+  <variableDef name="k45" varID="k45" units="nd" initialValue="-0.377"></variableDef>
+
+  <!-- ==================== -->
+  <!--  Internal variables  -->
+  <!-- ==================== -->
+
+  <variableDef name="alpha_rad" varID="alpha" units="rad">
+      <description>
+        Convert AoA from degrees to radians
+      </description>
+      <calculation>
+        <python>{alpha_deg}*{dtr}</python>
+      </calculation>
+  </variableDef>
+  <variableDef name="alpha2_rad" varID="alpha2" units="rad">
+      <description>
+        AoA squared
+      </description>
+      <calculation>
+        <python>{alpha}*{alpha}</python>
+      </calculation>
+  </variableDef>
+  <variableDef name="alpha3_rad" varID="alpha3" units="rad">
+      <description>
+        AoA cubed
+      </description>
+      <calculation>
+        <python>{alpha}*{alpha2}</python>
+      </calculation>
+  </variableDef>
+  <variableDef name="alpha4_rad" varID="alpha4" units="rad">
+      <description>
+        AoA to the power of 4
+      </description>
+      <calculation>
+        <python>{alpha}*{alpha3}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="beta_rad" varID="beta" units="rad">
+      <description>
+        Convert sideslip from degrees to radians
+      </description>
+      <calculation>
+        <python>{beta_deg}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="beta2_rad" varID="beta2" units="rad2">
+      <description>
+        sideslip squared
+      </description>
+      <calculation>
+        <python>{beta}*{beta}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="beta3_rad" varID="beta3" units="rad3">
+      <description>
+        sideslip cubed
+      </description>
+      <calculation>
+        <python>{beta}*{beta2}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="rollBodyRate_rad_s" varID="p" units="rad_s">
+      <description>
+        roll rate degrees/sec to radians/sec
+      </description>
+      <calculation>
+        <python>{p_deg_s}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="pitchBodyRate_rad_s" varID="q" units="rad_s">
+      <description>
+        pitch rate degrees/sec to radians/sec
+      </description>
+      <calculation>
+        <python>{q_deg_s}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="yawBodyRate_rad_s" varID="r" units="rad_s">
+      <description>
+        yaw rate degrees/sec to radians/sec
+      </description>
+      <calculation>
+        <python>{r_deg_s}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="el_rad" varID="el" units="rad">
+      <description>
+        elevator degrees to radians
+      </description>
+      <calculation>
+        <python>{el_deg}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="ail_rad" varID="ail" units="rad">
+      <description>
+        aileron degrees to radians
+      </description>
+      <calculation>
+        <python>{ail_deg}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <variableDef name="rdr_rad" varID="rdr" units="rad">
+      <description>
+        rudder degrees to radians
+      </description>
+      <calculation>
+        <python>{rdr_deg}*{dtr}</python>
+      </calculation>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--  Output variables  -->
+  <!-- ================== -->
+
+  <variableDef name="aeroBodyForceCoefficient_X" varID="cx" units="nd" sign="FWD">
+    <description> 
+      Total coefficient of force along the body X-axis.
+    </description>
+    <calculation>
+      <python>
+        {k1}+{k2}*{alpha}+{k3}*{alpha}*{q}+{k4}*{alpha}*{el}+{k5}*{alpha2}+\
+        {k6}*{alpha2}*{q}+{k7}*{alpha2}*{el}+{k8}*{alpha3}+\
+        {k9}*{alpha3}*{q}+{k10}*{alpha4}
+      </python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Y" varID="cy" units="nd" sign="RIGHT">
+    <description> 
+      Total coefficient of force along the body Y-axis
+    </description>
+    <calculation>
+      <python>{k11}*{beta}+{k12}*{p}+{k13}*{r}+{k14}*{ail}+{k15}*{rdr}</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyForceCoefficient_Z" varID="cz" units="nd" sign="DOWN">
+    <description> 
+      Total coefficient of force along the body Z-axis.
+    </description>
+    <calculation>
+      <python>
+        {k16}+{k17}*{alpha}+{k18}*{q}+{k19}*{el}+{k20}*{alpha}*{q}+\
+        {k21}*{alpha2}+{k22}*{alpha3}+{k23}*{alpha4}
+      </python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Roll" varID="cl" units="nd" sign="RWD">
+    <description> 
+      Total coefficient of moment around the body X-axis (rolling
+      moment)
+    </description>
+    <calculation>
+      <python>{k24}*{beta}+{k25}*{p}+{k26}*{r}+{k27}*{ail}+{k28}*{rdr}</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Pitch" varID="cm" units="nd" sign="ANU">
+    <description> 
+      Total coefficient of moment around the body Y-axis (pitching
+      moment)
+    </description>
+    <calculation>
+      <python>
+        {k29}+{k30}*{alpha}+{k31}*{q}+{k32}*{el}+{k33}*{alpha}*{q}+\
+        {k34}*{alpha2}*{q}+{k35}*{alpha2}*{el}+{k36}*{alpha3}*{q}+\
+        {k37}*{alpha3}*{el}+{k38}*{alpha4}
+      </python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="aeroBodyMomentCoefficient_Yaw" varID="cn" units="nd" sign="ANR">
+    <description> 
+      Total coefficient of moment around the body Z-axis (yawing
+      moment)
+    </description>
+    <calculation>
+      <python>
+        {k39}*{beta}+{k40}*{p}+{k41}*{r}+{k42}*{ail}+{k43}*{rdr}+\
+        {k44}*{beta2}+{k45}*{beta3}
+      </python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--       Checks       -->
+  <!-- ================== -->
+  <checkData>
+    <staticShot name="alpha = 5 deg">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>5.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <internalValues>
+        <signal> <varID>dtr</varID> <signalValue>0.01745329</signalValue> </signal>
+        <signal> <varID>alpha</varID> <signalValue>0.08726646</signalValue> </signal>
+        <signal> <varID>alpha2</varID> <signalValue>0.007615435</signalValue> </signal>
+        <signal> <varID>alpha3</varID> <signalValue>0.0006645721</signalValue> </signal>
+        <signal> <varID>alpha4</varID> <signalValue>5.799485777344489e-05</signalValue> </signal>
+        <signal> <varID>beta</varID> <signalValue>0</signalValue> </signal>
+      </internalValues> 
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.0390662</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue> 0.464669</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>0.0265377</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="a= -1 q= -30 el= 8">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-1.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-30.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>8.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>-0.276857</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>-16.028043</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>26.882376</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="alpha=5 el=8">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>5.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>8.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.0425938</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>0.5</signalValue>
+          <tol>0.1</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>-0.01</signalValue>
+          <tol>0.01</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>-0.220105</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="a=5 b=1 p=-20 r=-5 rdr=2">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>5.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>1.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-20.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-5.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.03906624</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>-0.1032711</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>0.46466945</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0.121265476</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>0.02653773</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>0.041767414</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="roll check">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>3.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-1</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.0245038</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>0.0143117</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>0.292282</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0.0310843</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>0.0887007</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>-0.0015302</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="rudder check">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-3.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>2</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>6</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>3.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.03214975</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue> 0.07792895</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>-0.25681410</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0.00368264</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>0.275311337</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>-0.042569856</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="all non-zero 1">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>4.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>2</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>1.5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-8.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>3.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue>0.0498666978858</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>0.03962770</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>-0.7788108</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>-0.012932889757</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>1.215768794697</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>-0.0252910967</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    <staticShot name="all non-zero 2">
+      <checkInputs>
+        <signal>
+          <signalName>angleOfAttack</signalName>
+          <varID>alpha_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-4.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>angleOfSideslip</signalName>
+          <varID>beta_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-2</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rollBodyRate</signalName>
+          <varID>p_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-1.5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>pitchBodyRate</signalName>
+          <varID>q_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>yawBodyRate</signalName>
+          <varID>r_deg_s</varID>
+          <signalUnits>deg_s</signalUnits>
+          <signalValue>-5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>elevatorDeflection</signalName>
+          <varID>el_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>8.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>aileronDeflection</signalName>
+          <varID>ail_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>-3.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>rudderDeflection</signalName>
+          <varID>rdr_deg</varID>
+          <signalUnits>deg</signalUnits>
+          <signalValue>2.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_X</signalName>
+          <varID>cx</varID>
+          <signalUnits/>
+          <signalValue> 0.157528439665</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Y</signalName>
+          <varID>cy</varID>
+          <signalUnits/>
+          <signalValue>-0.0396277006665</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyForceCoefficient_Z</signalName>
+          <varID>cz</varID>
+          <signalUnits/>
+          <signalValue>0.75930202820</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Roll</signalName>
+          <varID>cl</varID>
+          <signalUnits/>
+          <signalValue>0.012932889757</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Pitch</signalName>
+          <varID>cm</varID>
+          <signalUnits/>
+          <signalValue>-2.720855572</signalValue>
+          <tol>0.00001</tol>
+        </signal>
+        <signal>
+          <signalName>aeroBodyMomentCoefficient_Yaw</signalName>
+          <varID>cn</varID>
+          <signalUnits/>
+          <signalValue>0.02573949358863</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    <!-- ================== -->
+    
+  </checkData>
+
+</DAVEfunc>

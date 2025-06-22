@@ -1,0 +1,215 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE DAVEfunc PUBLIC "-//AIAA//DTD for Flight Dynamic Models - Functions 2.0//EN"  
+          "http://www.daveml.org/DTDs/2p0/DAVEfunc.dtd">
+<DAVEfunc xmlns="http://daveml.org/2010/DAVEML">
+
+  <fileHeader name="GTM Engine Model">
+    <author name="Trey Arthur" org="NASA Langley Research Center" email="trey.arthur@nasa.gov">
+      <address>MS 152 NASA, Hampton, VA 23681</address>
+    </author>
+
+    <creationDate date="2025-05-10"/>
+    <fileVersion>Version: 001</fileVersion>
+
+    <description>
+      An implementation of the GTM engine model.
+    </description>
+  </fileHeader>
+
+  <!-- ================== -->
+  <!--  Input variables   -->
+  <!-- ================== -->
+
+  <variableDef name="throttle" varID="throttle" units="percent [0-1]">
+    <description> Thrust lever: 0 - 1 </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--      Constants     -->
+  <!-- ================== -->
+
+  <variableDef name="maxThrust" varID="maxThrust" units="lbf" initialValue="25.0">
+    <description> Max thrust </description>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--  Output variables  -->
+  <!-- ================== -->
+
+  <variableDef name="thrustBodyForce_X" varID="tfx" units="lbf" sign="FWD">
+    <description> 
+      Total engine force along the body X-axis.
+    </description>
+    <calculation>
+      <python>{throttle}*{maxThrust}</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="thrustBodyForce_Y" varID="tfy" units="lbf" sign="RIGHT">
+    <description> 
+      Total engine force along the body Y-axis
+    </description>
+    <calculation>
+      <python>0</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="thrustBodyForce_Z" varID="tfz" units="lbf" sign="DOWN">
+    <description> 
+      Total engine force along the body Z-axis.
+    </description>
+    <calculation>
+      <python>0</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="thrustBodyMoment_Roll" varID="tr" units="rad" sign="RWD">
+    <description> 
+      Total engine moment around the body X-axis (engine rolling moment)
+    </description>
+    <calculation>
+      <python>0</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="thrustBodyMoment_Pitch" varID="tp" units="nd" sign="ANU">
+    <description> 
+      Total engine moment around the body Y-axis (pitching moment)
+    </description>
+    <calculation>
+      <python>0</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="thrustBodyMoment_Yaw" varID="ty" units="nd" sign="ANR">
+    <description> 
+      Total engine moment around the body Z-axis (yawing moment)
+    </description>
+    <calculation>
+      <python>0</python>
+    </calculation>
+    <isOutput/>
+    <isStdAIAA/>
+  </variableDef>
+
+  <!-- ================== -->
+  <!--       Checks       -->
+  <!-- ================== -->
+  <checkData>
+    <staticShot name="0 throttle">
+      <checkInputs>
+        <signal>
+          <signalName>throttle</signalName>
+          <varID>throttle</varID>
+          <signalUnits>nd</signalUnits>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <internalValues>
+        <signal> <varID>maxThrust</varID> <signalValue>25.0</signalValue> </signal>
+      </internalValues> 
+      <checkOutputs>
+        <signal>
+          <signalName>thrustBodyForce_X</signalName>
+          <varID>tfx</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>thrustBodyForce_Y</signalName>
+          <varID>tfy</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>thrustBodyForce_Z</signalName>
+          <varID>tfz</varID>
+          <signalUnits/>
+          <signalValue> 0.0</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+        <signal>
+          <signalName>thrustBodyMoment_Roll</signalName>
+          <varID>tr</varID>
+          <signalUnits/>
+          <signalValue>0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+        <signal>
+          <signalName>thrustBodyMoment_Pitch</signalName>
+          <varID>tp</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+        <signal>
+          <signalName>thrustBodyMoment_Yaw</signalName>
+          <varID>ty</varID>
+          <signalUnits/>
+          <signalValue>0.0</signalValue>
+          <tol>0.1</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
+    <!-- ================== -->
+    <staticShot name="0.5 throttle">
+      <checkInputs>
+        <signal>
+          <signalName>throttle</signalName>
+          <varID>throttle</varID>
+          <signalUnits>nd</signalUnits>
+          <signalValue>0.5</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>thrustBodyForce_X</signalName>
+          <varID>tfx</varID>
+          <signalUnits/>
+          <signalValue>12.5</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
+    <!-- ================== -->
+    <staticShot name="0.2 throttle">
+      <checkInputs>
+        <signal>
+          <signalName>throttle</signalName>
+          <varID>throttle</varID>
+          <signalUnits>nd</signalUnits>
+          <signalValue>0.2</signalValue>
+          <tol>0.000001</tol>
+        </signal>
+      </checkInputs>
+      <checkOutputs>
+        <signal>
+          <signalName>thrustBodyForce_X</signalName>
+          <varID>tfx</varID>
+          <signalUnits/>
+          <signalValue>5.0</signalValue>
+          <tol>0.0001</tol>
+        </signal>
+      </checkOutputs>
+    </staticShot>
+    
+  </checkData>
+
+</DAVEfunc>

@@ -4,7 +4,7 @@
   <fileHeader name="F-16 Subsonic Aerodynamics Model (a la Garza)">
     <author name="Bruce Jackson" org="NASA Langley Research Center" email="bruce.jackson@nasa.gov"/>
     <creationDate date="2003-06-10"/>
-    <fileVersion>$ Revision: 395 $</fileVersion>         
+    <fileVersion>$ Revision: 396 $</fileVersion>         
     <description>
       F-16 Aero Data file. Based on Morelli's adaptation of Stevens
       and Lewis' F-16 example [1] described in Garza &amp; Morelli's
@@ -316,6 +316,11 @@ return
     </description>
     <isStdAIAA/>
   </variableDef>
+  
+  <variableDef name="referenceWingArea" varID="sa" units="ft2" initialValue="300.0">
+    <description> wing area, ft2 </description>
+    <isStdAIAA/>
+  </variableDef>
 
   <variableDef name="referenceWingChord" varID="cbar" units="ft" initialValue="11.32">
     <description> Length of aerodynamic chord, ft </description>
@@ -324,6 +329,34 @@ return
 
   <variableDef name="referenceWingSpan" varID="bspan" units="ft" initialValue="30.">
     <description> Length of aerodynamic span, ft </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_X" varID="IXX" units="slugft2" initialValue="9496.0">
+    <description>
+      Rolling moment of inertia about the body X axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyMomentOfInertia_Y" varID="IYY" units="slugft2" initialValue="55814.0">
+    <description>
+      Pitching moment of inertia about the body Y axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+
+  <variableDef name="bodyMomentOfInertia_Z" varID="IZZ" units="slugft2" initialValue="63100.0">
+    <description>
+      Yawing moment of inertia about the body Z axis
+    </description>
+    <isStdAIAA/>
+  </variableDef>
+  
+  <variableDef name="bodyProductOfInertia_XZ" varID="IXZ" units="slugft2" initialValue="982.0">
+    <description>
+      XZ moment of inertia about the body Z axis
+    </description>
     <isStdAIAA/>
   </variableDef>
 

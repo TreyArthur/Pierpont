@@ -30,7 +30,7 @@ class Convert:
     Usage:
         # convert 72.876 knots to feet per second
         convert = Convert()
-        speedInFps = convert.units([72.876,"kt"],"fps")
+        speedInFps = convert.units([72.876,"kt"],"ft_s")
         
     Attributes:
         KNOT_TO_FPS: scale factor to convert knots to feet per second.
@@ -709,6 +709,8 @@ class BaseEom():
     def __init__(self, planet):
         self.Planet = planet
     
+    _store_data = False
+    
     # state values
     X = []
     
@@ -740,6 +742,9 @@ class BaseEom():
     def init(self):
         pass
     
+    def store_data(self, sd):
+        _store_data = sd
+    
     def pre_process(self):
         pass
     
@@ -769,6 +774,9 @@ class BaseEom():
         pass
     
     def set_body_velocity(self, u, v, w):
+        pass
+    
+    def body_velocity(self):
         pass
     
     def set_body_angular_rate(self, p, q, r):
@@ -812,13 +820,27 @@ class FlatEom(BaseEom):
                      self.Pdot, self.Qdot, self.Rdot, self.Ndot, self.Edot, self.Zdot]
     
     def pre_process(self):
+        #self.Planet.altitudeMsl_m = self.X[self.Zi]
+        
+        self.record_data('eulerAngle_rad_Roll', self.X[self.ϕi])
+        self.record_data('eulerAngle_rad_Pitch', self.X[self.θi])
+        self.record_data('eulerAngle_rad_Yaw', self.X[self.ψi])
+        self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
+        
+        
+        self.record_data('bodyAngularRate_deg_s_Roll', math.degrees(self.X[self.Pi]))
+        self.record_data('bodyAngularRate_deg_s_Pitch', math.degrees(self.X[self.Qi]))
+        self.record_data('bodyAngularRate_deg_s_Yaw', math.degrees(self.X[self.Ri]))
+        
         self.record_data('fePosition_m_X', self.X[self.Ni])
         self.record_data('fePosition_m_Y', self.X[self.Ei])
         self.record_data('fePosition_m_Z', self.X[self.Zi])
         self.record_data('altitudeMsl_m', self.X[self.Zi])
                     
     def post_process(self):
-        #self.All_X.append(self.X)
+        self.Planet.altitudeMsl_m = self.X[self.Zi]
+        if self._store_data:
+            self.All_X.append(self.X)
         self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
         self.advance_time()
     
@@ -826,12 +848,15 @@ class FlatEom(BaseEom):
         for x in self.All_X:
             self.record_data('time', self.time_s)
             self.time_s += self.timeStep_s
-            
+
+            self.record_data('eulerAngle_rad_Roll', x[self.ϕi])
+            self.record_data('eulerAngle_rad_Pitch', x[self.θi])
+            self.record_data('eulerAngle_rad_Yaw', x[self.ψi])
             self.record_data('fePosition_m_X', x[self.Ni])
             self.record_data('fePosition_m_Y', x[self.Ei])
             self.record_data('fePosition_m_Z', x[self.Zi])
             self.record_data('altitudeMsl_m', x[self.Zi])
-            
+
             self.Planet.air_data(x[self.Zi])
             self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
         
@@ -850,12 +875,33 @@ class FlatEom(BaseEom):
         self.X[self.Vi] = v
         self.X[self.Wi] = w
         
+    def body_velocity(self):
+        return [self.X[self.Ui], self.X[self.Vi], self.X[self.Wi]]
+        
     def set_body_angular_rate(self, p, q, r):
         self.X[self.Pi] = p
         self.X[self.Qi] = q
         self.X[self.Ri] = r  
         
     def set_body_force(self, bodyForce):
+        # rotate wind forces to body frame
+        #cos_alpha = math.cos(self.angleOfAttack)
+        #sin_alpha = math.sin(self.angleOfAttack)
+        #cos_beta = math.cos(self.angleOfSideslip)
+        #sin_beta = math.sin(self.angleOfSideslip)
+
+        #D = qS*self.aeroBodyForceCoefficient_X
+        #C = qS*self.aeroBodyForceCoefficient_Y
+        #L = qS*self.aeroBodyForceCoefficient_Z
+
+        #X = -D*cos_alpha*cos_beta + C*cos_alpha*sin_beta + L*sin_alpha + self.thrustBodyForce_X
+        #Y = -D*sin_beta - C*cos_beta + self.thrustBodyForce_Y
+        #Z = -D*sin_alpha*cos_beta + C*sin_alpha*sin_beta - L*cos_alpha + self.thrustBodyForce_Z
+        
+        #X = qS*self.aeroBodyForceCoefficient_X
+        #Y = qS*self.aeroBodyForceCoefficient_Y
+        #Z = qS*self.aeroBodyForceCoefficient_Z
+        
         self.bodyForce = bodyForce
         
     def set_body_moment(self, bodyMoment):
@@ -905,7 +951,8 @@ class FlatEom(BaseEom):
         Q = state[self.Qi]
         R = state[self.Ri]
         
-        assert state[self.θi] < abs(math.radians(90.0)), "θdot tanθ is 90"
+        assert state[self.θi] < math.radians(90.0), "θdot: θ is out of range, past 90 deg"
+        assert state[self.θi] > math.radians(-90.0), "θdot: θ is out of range, past -90 deg"
         tanθ = math.tan(state[self.θi])
         sinϕ = math.sin(state[self.ϕi])
         cosϕ = math.cos(state[self.ϕi])
@@ -929,7 +976,7 @@ class FlatEom(BaseEom):
         sinϕ = math.sin(state[self.ϕi])
         cosθ = math.cos(state[self.θi])
         
-        assert cosθ != 0.0, "ψdot cosθ is 0"
+        assert cosθ != 0.0, "ψdot: cosθ is 0"
         value = (Q*sinϕ + R*cosϕ) / cosθ
         return value
     
@@ -944,7 +991,7 @@ class FlatEom(BaseEom):
         l = self.bodyMoment.x
         n = self.bodyMoment.z
         
-        assert self.Gamma != 0.0, "Pdot Gamma is 0"
+        assert self.Gamma != 0.0, "Pdot: Gamma is 0"
         value = (Jxz * (Jx - Jy + Jz)*P*Q - (Jz*(Jz - Jy) + Jxz*Jxz)*Q*R + Jz*l + Jxz*n) / self.Gamma
         return value
         
@@ -958,7 +1005,7 @@ class FlatEom(BaseEom):
         Jxz = self.Jxz
         m = self.bodyMoment.y
 
-        assert Jy != 0.0, "Qdot Jy is 0"
+        assert Jy != 0.0, "Qdot: Jy is 0"
         value = ((Jz - Jx)*P*R - Jxz*(P*P - R*R) + m) / Jy
         return value
     
@@ -988,8 +1035,7 @@ class FlatEom(BaseEom):
         cosψ = math.cos(state[self.ψi])
         sinψ = math.sin(state[self.ψi])
         
-        value = U*cosθ*cosψ + V*(-cosϕ*sinψ + sinϕ*sinθ*cosψ)
-        + W*(sinϕ*sinψ + cosϕ*sinθ*cosψ)
+        value = U*cosθ*cosψ + V*(-cosϕ*sinψ + sinϕ*sinθ*cosψ) + W*(sinϕ*sinψ + cosϕ*sinθ*cosψ)
         return value
     
     def Edot(self, state):
@@ -1003,8 +1049,7 @@ class FlatEom(BaseEom):
         cosψ = math.cos(state[self.ψi])
         sinψ = math.sin(state[self.ψi])
         
-        value = U*cosθ*sinψ + V*(cosϕ*cosψ + sinϕ*sinθ*sinψ)
-        + W*(-sinϕ*cosψ + cosϕ*sinθ*sinψ)
+        value = U*cosθ*sinψ + V*(cosϕ*cosψ + sinϕ*sinθ*sinψ) + W*(-sinϕ*cosψ + cosϕ*sinθ*sinψ)
         return value
     
     def Zdot(self, state):
@@ -1031,16 +1076,12 @@ class FlatEom(BaseEom):
         self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
         
         # get dynamic pressure:  q = 1/2 rho v^2
-        #density = self.Planet.AirDensity(self.X[self.Zi])
-        #dynamicPressure = 0.5 * density * (self.TrueAirspeed)**2
-        
-        # get dynamic pressure:  q = 1/2 rho v^2
         dynamicPressure = (
             self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.true_airspeed())
         )
         
         return dynamicPressure
-
+        
 ###############################################################################
 class OblateEom(BaseEom):
     """
@@ -1124,6 +1165,8 @@ class OblateEom(BaseEom):
         self.record_data('eiPosition_m_Z', self.QeiPosition.z)
         
     def post_process(self):
+        if self._store_data:
+            self.All_X.append(self.X)
         self.record_data('speedOfSound_m_s', self.Planet.speedOfSound_m_s)
         self.record_data('localGravity_m_s2', self.Planet.gravityQ.magnitude())
         
@@ -1151,7 +1194,7 @@ class OblateEom(BaseEom):
             self.record_data('localGravity_m_s2', self.Planet.longitude_rad)
             
             # set q frd/ecf (e2b) ECF to body
-            Qe2b = Quaternion(x[0], x[1], x[2], x[3])
+            Qe2b = Quaternion(x[self.Qni], x[1], x[2], x[3])
 
             # set q ned/ecf (e2n) ECF to NED
             Qe2n = Quaternion()
@@ -1254,12 +1297,14 @@ class OblateEom(BaseEom):
         gx = self.Planet.gravityQ.x
         xDot = ax + 2.0 * w * state[self.Vyi] + gx + state[self.Xi] * w**2
         return xDot
+    
     def VyDot(self, state):
         w = self.Planet.rotationRate_rad_s
         ay = self.ecfForce.y / self.totalMass_kg
         gy = self.Planet.gravityQ.y
         yDot = ay - 2.0 * w * state[self.Vxi] + gy + state[self.Yi] * w**2 
         return yDot
+    
     def VzDot(self, state):
         az = self.ecfForce.z / self.totalMass_kg
         return (az + self.Planet.gravityQ.z)
@@ -1326,7 +1371,7 @@ class OblateEom(BaseEom):
         )
         
         return dynamicPressure
-        
+    
 ###############################################################################
 class Simulation(Convert):
     IC = {}
@@ -1335,8 +1380,8 @@ class Simulation(Convert):
     Planet = None
     Eom = None
     
-    AeroModel = daveML.Model()
-    EngineModel = daveML.Model()
+    _python_model = False
+    _dave_model = False
     
     aeroBodyForce = Quaternion() 
     aeroBodyMoment = Quaternion()
@@ -1350,9 +1395,11 @@ class Simulation(Convert):
     SetupString = ""
     
     def __init__(self, arg):
-        self.AeroModel.Defined = False
-        self.EngineModel.Defined = False
-        
+        self.DaveModel = daveML.Model()
+
+        _python_model = False
+        _dave_model = False
+            
         arglc = arg.lower()
         
         planet = "EARTH"
@@ -1365,15 +1412,15 @@ class Simulation(Convert):
         else:
             self.Planet = Earth()
             
-        eom = "OBLATE"
+        eom = "UNKNOWN"
         if arglc.find('flat') != -1:
             eom = "FLAT"
             self.Eom = FlatEom(self.Planet)
         else:
+            eom = "OBLATE"
             self.Eom = OblateEom(self.Planet)
             
         self.SetupString = "-- " + eom + " : " + planet + " --"
-        #print("-- ", eom, " : ", planet, " --")
             
         self.clear_data()
         
@@ -1397,15 +1444,15 @@ class Simulation(Convert):
     def set_value(self, label, defValue = 0):
         value = 0.0
         infoStr = "none"
-        
+            
         if label in self.IC:
             value = self.IC[label]
             infoStr = "[IC case]"
-        elif self.AeroModel.HasName(label):
-            valueRaw = self.AeroModel.DataFromName(label)
-            units = self.AeroModel.Units(label)
+        elif self.DaveModel.HasName(label):
+            valueRaw = self.DaveModel.DataFromName(label)
+            units = self.DaveModel.Units(label)
             value = self.to_si([valueRaw, units])
-            infoStr = "[DML model]"
+            infoStr = "[DAVE model]"
         else:
             value = defValue
             infoStr = "[default]"
@@ -1426,35 +1473,44 @@ class Simulation(Convert):
     
     def calc_aero_body_forces(self, qS):
         # compute the aero forces in the body frame
-        self.aeroBodyForce.x = ( 
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_X") 
-        )
-        self.aeroBodyForce.y = (
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Y") 
-        )
-        self.aeroBodyForce.z = (
-            qS * self.AeroModel.DataFromName("aeroBodyForceCoefficient_Z") 
-        )
+        cx = self.aeroBodyForceCoefficient_X
+        cy = self.aeroBodyForceCoefficient_Y
+        cz = self.aeroBodyForceCoefficient_Z
+        
+        self.aeroBodyForce.x = qS * cx
+        self.aeroBodyForce.y = qS * cy
+        self.aeroBodyForce.z = qS * cz
         
     def calc_aero_body_moments(self, qS):
         # calculate the dimensional aero moments
-        self.aeroBodyMoment.x = (qS * self.referenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Roll"))
-        self.aeroBodyMoment.y = (qS * self.referenceWingChord 
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Pitch"))
-        self.aeroBodyMoment.z = (qS * self.referenceWingSpan  
-                   * self.AeroModel.DataFromName("aeroBodyMomentCoefficient_Yaw"))
+        cl = self.aeroBodyMomentCoefficient_Roll
+        cm = self.aeroBodyMomentCoefficient_Pitch
+        cn = self.aeroBodyMomentCoefficient_Yaw
         
-    def set_aero_model(self, aeroModelFile, debugModel = False):
-        self.AeroModel.LoadDml(aeroModelFile, debugModel)
-        
-    def set_engine_model(self, engineModelFile, debugModel = False):
-        self.EngineModel.LoadDml(engineModelFile, debugModel)
-        
-    def set_aero_inputs(self):
+        self.aeroBodyMoment.x = (qS * self.referenceWingSpan * cl)
+        self.aeroBodyMoment.y = (qS * self.referenceWingChord * cm)
+        self.aeroBodyMoment.z = (qS * self.referenceWingSpan  * cn)
+    
+    def set_model(self, modelFile, debugModel = False):
+        self._dave_model = True
+        self.DaveModel.LoadDml(modelFile, debugModel)
+    
+    def set_inputs(self):
         pass
     
-    def set_engine_inputs(self):
+    def execute_model(self):
+        pass
+    
+    def set_outputs(self):
+        pass
+    
+    def trim(self):
+        pass
+    
+    def set_python_model(self, upm):
+        self._python_model = upm
+        
+    def run_python_model(self):
         pass
     
     def reset(self, ic):
@@ -1475,13 +1531,21 @@ class Simulation(Convert):
         self.referenceWingChord = self.set_value("referenceWingChord")
         self.referenceWingArea = self.set_value("referenceWingArea")
         
-        self.AeroModel.Set("aeroBodyForceCoefficient_X")
-        self.AeroModel.Set("aeroBodyForceCoefficient_Y")
-        self.AeroModel.Set("aeroBodyForceCoefficient_Z")
-
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Roll")
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Pitch")
-        self.AeroModel.Set("aeroBodyMomentCoefficient_Yaw")
+        self.aeroBodyForceCoefficient_X = 0
+        self.aeroBodyForceCoefficient_Y = 0
+        self.aeroBodyForceCoefficient_Z = 0
+        
+        self.aeroBodyMomentCoefficient_Roll = 0
+        self.aeroBodyMomentCoefficient_Pitch = 0
+        self.aeroBodyMomentCoefficient_Yaw = 0
+        
+        self.thrustBodyForce_X = 0
+        self.thrustBodyForce_Y = 0
+        self.thrustBodyForce_Z = 0
+        
+        self.thrustBodyMoment.x = 0
+        self.thrustBodyMoment.y = 0
+        self.thrustBodyMoment.z = 0
         
         trueAirspeed = self.set_value("trueAirspeed")
         
@@ -1492,7 +1556,7 @@ class Simulation(Convert):
         self.Eom.Planet.longitude_rad = self.set_value("longitude")
         self.Eom.Planet.altitudeMsl_m = self.set_value("altitudeMsl")
         self.Eom.Planet.fePosition_m_X = self.set_value("fePosition_m_X")
-        self.Eom.Planet.fePosition_m_Y = self.set_value("fdPosition_m_Y")
+        self.Eom.Planet.fePosition_m_Y = self.set_value("fePosition_m_Y")
         self.Eom.set_position()
         
         # Set the Euler angles
@@ -1501,17 +1565,17 @@ class Simulation(Convert):
         yawEulerAngle   = self.set_value("eulerAngle_Yaw")
         self.Eom.set_body_angle( rollEulerAngle, pitchEulerAngle, yawEulerAngle )
         
-        angleOfAttack = self.set_value("angleOfAttack")
-        angleOfSideslip = self.set_value("angleOfSideslip")
-        u = trueAirspeed * math.cos(angleOfAttack) * math.cos(angleOfSideslip);
-        v = trueAirspeed * math.sin(angleOfSideslip);
-        w = trueAirspeed * math.sin(angleOfAttack) * math.cos(angleOfSideslip);
+        self.angleOfAttack = self.set_value("angleOfAttack")
+        self.angleOfSideslip = self.set_value("angleOfSideslip")
+        u = trueAirspeed * math.cos(self.angleOfAttack) * math.cos(self.angleOfSideslip);
+        v = trueAirspeed * math.sin(self.angleOfSideslip);
+        w = trueAirspeed * math.sin(self.angleOfAttack) * math.cos(self.angleOfSideslip);
         self.Eom.set_body_velocity(u, v, w)
         
         # Set angular rates
-        P = self.set_value("eulerAngleRate_Roll")
-        Q = self.set_value("eulerAngleRate_Pitch")
-        R = self.set_value("eulerAngleRate_Yaw")
+        P = self.set_value("bodyAngularRate_Roll")
+        Q = self.set_value("bodyAngularRate_Pitch")
+        R = self.set_value("bodyAngularRate_Yaw")
         self.Eom.set_body_angular_rate(P, Q, R)
         
         # Set the inertia matrix
@@ -1526,48 +1590,57 @@ class Simulation(Convert):
         self.Eom.Gamma = (Jx*Jz) - (Jxz*Jxz)
         assert self.Eom.Gamma != 0, "Gamma is 0"
         
+    def run_model(self, qS):
+        # Compute the force loads from the DAVE-ML model
+        if self._dave_model:
+            inData = self.set_inputs()
+            self.DaveModel.Update(inData)
+            self.set_outputs()
+            
+        elif self._python_model:
+            self.run_python_model()
+            
+        # save the output coefficients
+
+        self.Eom.record_data('aeroBodyMomentCoefficient_Roll', self.aeroBodyMomentCoefficient_Roll)
+        self.Eom.record_data('aeroBodyMomentCoefficient_Pitch', self.aeroBodyMomentCoefficient_Pitch)
+        self.Eom.record_data('aeroBodyMomentCoefficient_Yaw', self.aeroBodyMomentCoefficient_Yaw)
+
+        # compute the aero forces in the body frame
+        self.calc_aero_body_forces(qS)
+
+        # save the aero force data
+        self.Eom.record_data('aero_bodyForce_N_X', self.aeroBodyForce.x)
+        self.Eom.record_data('aero_bodyForce_N_Y', self.aeroBodyForce.y)
+        self.Eom.record_data('aero_bodyForce_N_Z', self.aeroBodyForce.z)
+
+        # calculate the dimensional aero moments
+        self.calc_aero_body_moments(qS)
+
+        # total body forces
+        bodyForce = self.aeroBodyForce + self.thrustBodyForce
+        self.Eom.set_body_force(bodyForce)
+
+        # total body moments
+        bodyMoment = self.aeroBodyMoment + self.thrustBodyMoment
+        self.Eom.set_body_moment(bodyMoment)          
+        
     def operate(self):
         self.Eom.pre_process()
         
         dynamicPressure = self.Eom.integrate()
+        
+        [u, v, w] = self.Eom.body_velocity()
+        self.angleOfAttack = math.atan2(w, u)
+        self.angleOfSideslip = math.asin(v / self.Eom.Planet.trueAirspeed_m_s)
+        
+        self.Eom.record_data('angleOfAttack_deg', math.degrees(self.angleOfAttack))
+        self.Eom.record_data('angleOfSideslip_deg', math.degrees(self.angleOfSideslip))
           
         # Get the qS factor for getting dimensional forces and moments
         qS = dynamicPressure * self.referenceWingArea
         
-        # Compute the aerodynamic loads from the DAVE-ML model
-        if ( self.AeroModel.Defined ):
-            self.set_aero_inputs()
-            
-            self.AeroModel.Update(self.Data)
-            
-            # compute the aero forces in the body frame
-            self.calc_aero_body_forces(qS)
-            
-            # save the aero force data
-            self.Eom.record_data('aero_bodyForce_N_X', self.aeroBodyForce.x)
-            self.Eom.record_data('aero_bodyForce_N_Y', self.aeroBodyForce.y)
-            self.Eom.record_data('aero_bodyForce_N_Z', self.aeroBodyForce.z)
-    
-            # calculate the dimensional aero moments
-            self.calc_aero_body_moments(qS)
-        
-        # Compute the engine model loads from the DAVE-ML model
-        if ( self.EngineModel.Defined ):
-            self.set_engine_inputs()
-        
-            self.EngineModel.Update(self.Data)
-            
-            # calculate engine forces
-        
-            # calculate engine moments
-        
-        # total body forces
-        bodyForce = self.aeroBodyForce + self.thrustBodyForce
-        self.Eom.set_body_force(bodyForce)
-        
-        # total body moments
-        bodyMoment = self.aeroBodyMoment + self.thrustBodyMoment
-        self.Eom.set_body_moment(bodyMoment)
+        self.run_model(qS)
         
         self.Eom.post_process()
         
@@ -1575,4 +1648,8 @@ class Simulation(Convert):
         endTime = int(numberOfSeconds / self.Eom.timeStep_s) + 1
         for i in range(endTime):
             self.operate()
+            if self.Eom.Planet.altitudeMsl_m  < 0:
+                print("time(s):", self.Eom.time_s, " ground impact, h(m):", self.Eom.Planet.altitudeMsl_m)
+                break
+            
         print("======done=======")

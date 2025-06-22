@@ -23,6 +23,7 @@ class Model:
         UgtDef : all ungridded tables in the DAVE model.
         FunctionDef : all functions defined by the DAVE model.
     """
+    ModelType = "None"
     Data = {}
     
     NameToId = {}
@@ -219,10 +220,8 @@ class Model:
     def Set(self, inName, inValue = 0):
         """Set the value of a model value given a name."""
         if not (inName in self.NameToId):
-            infoStr = inName + " not in DAVE model. Value set to " + str(inValue)
-            logging.info(infoStr)
-            self.NameToId[inName] = inName
-            self.Data[inName] = inValue
+            infoStr = inName + " not in DAVE model. CHECK inputs to model"
+            logging.error(infoStr)
         else:
             self.Data[self.NameToId[inName]] = inValue
             
@@ -240,6 +239,7 @@ class Model:
             if v.hasMath:
                 newText = v.codeText.replace("{", "self.Data[\"")
                 newText = newText.replace("}", "\"]")
+                newText = newText.strip()
                 v.code = compile(newText, "<string>", "eval")
                 
                 if printDebugData:
@@ -251,9 +251,9 @@ class Model:
         for v in self.VarDef:
             if v.isInput:
                 self.Inputs.append( v.name )
-                print("++> Input: ", v.name, "(", v.varID, ")")
+                print("++> Input: ", v.name, "(", v.varID, ") ", v.units)
             if v.isOutput:
-                print("++> Output: ", v.varID)
+                print("++> Output: ", v.name, "(", v.varID, ") ", v.units)
         print("++++++++++++++++++++++++++++++++++++")
         
         # connect the gridded tables with break points to functions
@@ -290,7 +290,7 @@ class Model:
     def Update(self, data):
         """Update all the values in the model."""
         
-        for d in self.Inputs:
+        for d in data:
             self.Set(d, data[d])
         
         # Evaluate the MATH-ML equations and functions
