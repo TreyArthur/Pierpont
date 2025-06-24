@@ -884,24 +884,6 @@ class FlatEom(BaseEom):
         self.X[self.Ri] = r  
         
     def set_body_force(self, bodyForce):
-        # rotate wind forces to body frame
-        #cos_alpha = math.cos(self.angleOfAttack)
-        #sin_alpha = math.sin(self.angleOfAttack)
-        #cos_beta = math.cos(self.angleOfSideslip)
-        #sin_beta = math.sin(self.angleOfSideslip)
-
-        #D = qS*self.aeroBodyForceCoefficient_X
-        #C = qS*self.aeroBodyForceCoefficient_Y
-        #L = qS*self.aeroBodyForceCoefficient_Z
-
-        #X = -D*cos_alpha*cos_beta + C*cos_alpha*sin_beta + L*sin_alpha + self.thrustBodyForce_X
-        #Y = -D*sin_beta - C*cos_beta + self.thrustBodyForce_Y
-        #Z = -D*sin_alpha*cos_beta + C*sin_alpha*sin_beta - L*cos_alpha + self.thrustBodyForce_Z
-        
-        #X = qS*self.aeroBodyForceCoefficient_X
-        #Y = qS*self.aeroBodyForceCoefficient_Y
-        #Z = qS*self.aeroBodyForceCoefficient_Z
-        
         self.bodyForce = bodyForce
         
     def set_body_moment(self, bodyMoment):
@@ -1159,6 +1141,9 @@ class OblateEom(BaseEom):
         self.record_data('eulerAngle_rad_Roll', self.Roll)
         self.record_data('eulerAngle_rad_Pitch', self.Pitch)
         self.record_data('eulerAngle_rad_Yaw', self.Yaw)
+        self.record_data('bodyAngularRate_deg_s_Roll', math.degrees(self.X[self.Pi]))
+        self.record_data('bodyAngularRate_deg_s_Pitch', math.degrees(self.X[self.Qi]))
+        self.record_data('bodyAngularRate_deg_s_Yaw', math.degrees(self.X[self.Ri]))
         self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
         self.record_data('eiPosition_m_X', self.QeiPosition.x)
         self.record_data('eiPosition_m_Y', self.QeiPosition.y)
