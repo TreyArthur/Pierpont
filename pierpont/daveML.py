@@ -28,6 +28,7 @@ class Model:
     
     NameToId = {}
     IdToName = {}
+    _parameters = {}
     
     VarDef = []
     BpDef = []
@@ -198,6 +199,7 @@ class Model:
             f.Clear()
         self.FunctionDef.clear()
         self.CheckData.Clear()
+        self._parameters.clear()
         self.Defined = False
         
     def HasName(self, inName):
@@ -224,6 +226,9 @@ class Model:
             logging.error(infoStr)
         else:
             self.Data[self.NameToId[inName]] = inValue
+            
+    def Parameters(self):
+        return self._parameters
             
     def PreProcess(self, printDebugData):
         """Preprocess the model."""
@@ -252,8 +257,10 @@ class Model:
             if v.isInput:
                 self.Inputs.append( v.name )
                 print("++> Input: ", v.name, "(", v.varID, ") ", v.units)
-            if v.isOutput:
+            elif v.isOutput:
                 print("++> Output: ", v.name, "(", v.varID, ") ", v.units)
+            else:
+                self._parameters[v.name] = [self.Data[v.varID], v.units]
         print("++++++++++++++++++++++++++++++++++++")
         
         # connect the gridded tables with break points to functions

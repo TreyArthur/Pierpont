@@ -1,5 +1,4 @@
 import math
-from . import daveML
 
 class Convert:
     """A class for performing unit conversions.
@@ -1365,8 +1364,8 @@ class Simulation(Convert):
     Planet = None
     Eom = None
     
-    _python_model = False
-    _dave_model = False
+    _use_model = False
+    model_parameters = {}
     
     aeroBodyForce = Quaternion() 
     aeroBodyMoment = Quaternion()
@@ -1380,11 +1379,6 @@ class Simulation(Convert):
     SetupString = ""
     
     def __init__(self, arg):
-        self.DaveModel = daveML.Model()
-
-        _python_model = False
-        _dave_model = False
-            
         arglc = arg.lower()
         
         planet = "EARTH"
@@ -1429,15 +1423,15 @@ class Simulation(Convert):
     def set_value(self, label, defValue = 0):
         value = 0.0
         infoStr = "none"
-            
+        
         if label in self.IC:
             value = self.IC[label]
             infoStr = "[IC case]"
-        elif self.DaveModel.HasName(label):
-            valueRaw = self.DaveModel.DataFromName(label)
-            units = self.DaveModel.Units(label)
+        elif label in self.model_parameters:
+            valueRaw = self.model_parameters[label][0]
+            units = self.model_parameters[label][1]
             value = self.to_si([valueRaw, units])
-            infoStr = "[DAVE model]"
+            infoStr = "[Model]"
         else:
             value = defValue
             infoStr = "[default]"
@@ -1476,26 +1470,17 @@ class Simulation(Convert):
         self.aeroBodyMoment.y = (qS * self.referenceWingChord * cm)
         self.aeroBodyMoment.z = (qS * self.referenceWingSpan  * cn)
     
-    def set_model(self, modelFile, debugModel = False):
-        self._dave_model = True
-        self.DaveModel.LoadDml(modelFile, debugModel)
-    
-    def set_inputs(self):
+    def init_model(self):
         pass
     
     def execute_model(self):
         pass
     
-    def set_outputs(self):
-        pass
-    
-    def trim(self):
-        pass
-    
-    def set_python_model(self, upm):
-        self._python_model = upm
+    def use_model(self):
+        self._use_model = True
+        self.init_model()
         
-    def run_python_model(self):
+    def trim(self):
         pass
     
     def reset(self, ic):
@@ -1576,14 +1561,9 @@ class Simulation(Convert):
         assert self.Eom.Gamma != 0, "Gamma is 0"
         
     def run_model(self, qS):
-        # Compute the force loads from the DAVE-ML model
-        if self._dave_model:
-            inData = self.set_inputs()
-            self.DaveModel.Update(inData)
-            self.set_outputs()
-            
-        elif self._python_model:
-            self.run_python_model()
+        # Compute the force loads from the model           
+        if self._use_model:
+            self.execute_model()
             
         # save the output coefficients
 
