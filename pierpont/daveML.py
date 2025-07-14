@@ -227,7 +227,7 @@ class Model:
         else:
             self.Data[self.NameToId[inName]] = inValue
             
-    def Parameters(self):
+    def Properties(self):
         return self._parameters
             
     def PreProcess(self, printDebugData):

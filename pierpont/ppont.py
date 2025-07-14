@@ -1365,7 +1365,7 @@ class Simulation(Convert):
     Eom = None
     
     _use_model = False
-    model_parameters = {}
+    model_properties = {}
     
     aeroBodyForce = Quaternion() 
     aeroBodyMoment = Quaternion()
@@ -1427,9 +1427,9 @@ class Simulation(Convert):
         if label in self.IC:
             value = self.IC[label]
             infoStr = "[IC case]"
-        elif label in self.model_parameters:
-            valueRaw = self.model_parameters[label][0]
-            units = self.model_parameters[label][1]
+        elif label in self.model_properties:
+            valueRaw = self.model_properties[label][0]
+            units = self.model_properties[label][1]
             value = self.to_si([valueRaw, units])
             infoStr = "[Model]"
         else:
