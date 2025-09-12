@@ -1789,7 +1789,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive sideslip" refID="NOTE1">
+    <staticShot name="PositiveSideslip" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -1950,7 +1950,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative sideslip" refID="NOTE1">
+    <staticShot name="NegativeSideslip" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2111,7 +2111,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive roll rate" refID="NOTE1">
+    <staticShot name="PositiveRollRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2174,6 +2174,57 @@ return
           <signalValue> 0.250</signalValue>
         </signal>
       </checkInputs>
+      <internalValues>
+	<signal> <varID>vt</varID> <signalValue>300.0</signalValue> </signal>
+	<signal> <varID>alpha</varID> <signalValue>5.0</signalValue> </signal>
+	<signal> <varID>beta</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>p</varID> <signalValue>3.42</signalValue> </signal>
+	<signal> <varID>q</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>r</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>el</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>ail</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>rdr</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>rtd</varID> <signalValue>57.29577957855229</signalValue> </signal>
+	<signal> <varID>cbar</varID> <signalValue>11.32</signalValue> </signal>
+	<signal> <varID>bspan</varID> <signalValue>30.0</signalValue> </signal>
+	<signal> <varID>del</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>dail</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>drdr</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>cxt</varID> <signalValue>-0.0040</signalValue> </signal>
+	<signal> <varID>cy0</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>czt</varID> <signalValue>-0.416</signalValue> </signal>
+	<signal> <varID>cz1</varID> <signalValue>-0.416</signalValue> </signal>
+	<signal> <varID>tvt</varID> <signalValue>600.0</signalValue> </signal>
+	<signal> <varID>b2v</varID> <signalValue>0.05</signalValue> </signal>
+	<signal> <varID>cq2v</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>absbeta</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>absCl0</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>absCn0</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>clt</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>cmt</varID> <signalValue>-0.0050</signalValue> </signal>
+	<signal> <varID>cnt</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>cxq</varID> <signalValue>1.34</signalValue> </signal>
+	<signal> <varID>cyr</varID> <signalValue>0.958</signalValue> </signal>
+	<signal> <varID>cyp</varID> <signalValue>0.11</signalValue> </signal>
+	<signal> <varID>czq</varID> <signalValue>-31.4</signalValue> </signal>
+	<signal> <varID>clr</varID> <signalValue>0.113</signalValue> </signal>
+	<signal> <varID>clp</varID> <signalValue>-0.42</signalValue> </signal>
+	<signal> <varID>cmq</varID> <signalValue>-5.26</signalValue> </signal>
+	<signal> <varID>cnr</varID> <signalValue>-0.386</signalValue> </signal>
+	<signal> <varID>cnp</varID> <signalValue>-0.012</signalValue> </signal>
+	<signal> <varID>dclda</varID> <signalValue>-0.052</signalValue> </signal>
+	<signal> <varID>dcldr</varID> <signalValue>0.014</signalValue> </signal>
+	<signal> <varID>dcnda</varID> <signalValue>-0.0090</signalValue> </signal>
+	<signal> <varID>dcndr</varID> <signalValue>-0.045</signalValue> </signal>
+	<signal> <varID>cl1</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>cn1</varID> <signalValue>0.0</signalValue> </signal>
+	<signal> <varID>cx</varID> <signalValue>-0.0040</signalValue> </signal>
+	<signal> <varID>cy</varID> <signalValue>0.01881</signalValue> </signal>
+	<signal> <varID>cz</varID> <signalValue>-0.416</signalValue> </signal>
+	<signal> <varID>cl</varID> <signalValue>-0.07182</signalValue> </signal>
+	<signal> <varID>cm</varID> <signalValue>-0.0466</signalValue> </signal>
+	<signal> <varID>cn</varID> <signalValue>-0.00276176400000</signalValue> </signal>
+      </internalValues>
       <checkOutputs>
         <signal>
           <signalName>aeroXBodyForceCoefficient</signalName>
@@ -2219,7 +2270,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative roll rate" refID="NOTE1">
+    <staticShot name="NegativeRollRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2380,7 +2431,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive pitch rate" refID="NOTE1">
+    <staticShot name="PositivePitchRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2541,7 +2592,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative pitch rate" refID="NOTE1">
+    <staticShot name="NegativePitchRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2702,7 +2753,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive yaw rate" refID="NOTE1">
+    <staticShot name="PositiveYawRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -2863,7 +2914,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative yaw rate" refID="NOTE1">
+    <staticShot name="NegativeYawRate" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3024,7 +3075,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive elevator" refID="NOTE1">
+    <staticShot name="PositiveElevator" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3185,7 +3236,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative elevator" refID="NOTE1">
+    <staticShot name="NegativeElevator" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3346,7 +3397,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive aileron" refID="NOTE1">
+    <staticShot name="PositiveAileron" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3507,7 +3558,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative aileron" refID="NOTE1">
+    <staticShot name="NegativeAileron" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3668,7 +3719,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Positive rudder" refID="NOTE1">
+    <staticShot name="PositiveRudder" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3829,7 +3880,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Negative rudder" refID="NOTE1">
+    <staticShot name="NegativeRudder" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -3990,7 +4041,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Aft CG" refID="NOTE1">
+    <staticShot name="AftCG" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
@@ -4151,7 +4202,7 @@ return
         </signal>
       </checkOutputs>
     </staticShot>
-    <staticShot name="Skewed inputs" refID="NOTE1">
+    <staticShot name="SkewedInputs" refID="NOTE1">
       <checkInputs>
         <signal>
           <signalName>trueAirspeed</signalName>
