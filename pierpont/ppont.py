@@ -71,6 +71,8 @@ class Convert:
     _RADIAN_TO_DEGREE = math.degrees(1.0)
     _MPS_TO_KT = 1.943844
     _KT_TO_MPS = 1.0 / _MPS_TO_KT
+    _NEWTON_METER_TO_FOOT_LB = _NEWTON_TO_LB * _METER_TO_FEET
+    _FOOT_LB_TO_NEWTON_METER = (1.0 / _NEWTON_METER_TO_FOOT_LB)
     
     _FromTo = {
         "kt->fps": _KNOT_TO_FPS,
@@ -100,7 +102,9 @@ class Convert:
         "m_s->nmi_h": _MPS_TO_KT,
         "m_s->kt": _MPS_TO_KT,
         "nmi_h->m_s": _KT_TO_MPS,
-        "kt->m_s": _KT_TO_MPS
+        "kt->m_s": _KT_TO_MPS,
+        "nm->ftlbf": _NEWTON_METER_TO_FOOT_LB,
+        "ftlbf->nm": _FOOT_LB_TO_NEWTON_METER
     }
     
     _ToSI = {
@@ -115,7 +119,8 @@ class Convert:
         "km": "m",
         "km_s": "m_s",
         "kt": "m_s",
-        "nmi_h": "m_s"
+        "nmi_h": "m_s",
+        "ftlbf": "nm"
     }
         
     def units(self, value, toUnits):
@@ -180,16 +185,16 @@ class BasePlanet():
     semiMinor_m = 0
     eccentricity = 0
     eccentricitySquared = 0
+    gravity_constant_m_s2 = 0
     
     rotationQ = None
     bodyRotationQ = None
-    gravityV = None
+    gravityV = [0, 0, 0]
     
     airDensity_kg_m3 = 0
     temperature_dgK = 0
     pressure_Pa = 0
     speedOfSound_m_s = 0
-    trueAirspeed_m_s = 0
     
     def calculate_semi_minor(self):
         """Calculate the semi-minor axis based on semi-major and flattening 
@@ -266,8 +271,6 @@ class BasePlanet():
         
         dynamicPressure = 0.5 * self.airDensity_kg_m3 * trueAirspeed * trueAirspeed
         
-        self.trueAirspeed_m_s = trueAirspeed
-        
         return dynamicPressure
     
 ###############################################################################
@@ -291,7 +294,7 @@ class Earth(BasePlanet):
         
         The height is geopotential height (Z) in meters above MSL.  The reference 
         for the [US Standard Atmosphere 1976](https://ntrs.nasa.gov/citations/19770009539).  
-        The refernence for the 
+        The reference for the 
         [pressure equation](https://en.wikipedia.org/wiki/Barometric_formula). 
 
         Layer | Height (m) | Pressure (Pa) | Temperature (K) | Temperature Lapse Rate (K/m)
@@ -708,16 +711,13 @@ class BaseEom():
     def __init__(self, planet):
         self.Planet = planet
     
-    _store_data = False
-    
     # state values
     X = []
     
     # state DFE
     Xdot = []
     
-    # record all states at each time step
-    All_X = []
+    uDot = 0
     
     time_s = 0
     timeStep_s = 0.1
@@ -734,15 +734,10 @@ class BaseEom():
     
     Integrator = BaseIntegrator()
     
-    dynamicPressure = 0
-    
     Metric = {}
         
     def init(self):
         pass
-    
-    def store_data(self, sd):
-        _store_data = sd
     
     def pre_process(self):
         pass
@@ -755,27 +750,52 @@ class BaseEom():
             self.Metric[label] = []
         self.Metric[label].append(value)
         
-    def advance_time(self):
-        self.record_data('time', self.time_s)
-        self.time_s += self.timeStep_s
-        
-    def make_data(self):
-        pass
-        
     def clear_data(self):
         self.time_s = 0
         self.X.clear()
         self.Xdot.clear()
-        self.All_X.clear()
         self.Metric.clear()
+        
+    def true_airspeed(self):
+        pass
+        
+    def angleOfAttack(self, u, w):
+        return math.atan2(w, u)
+
+    def angleOfSideslip(self, v):
+        trueAirspeed = self.true_airspeed()
+        beta = 0
+        if abs(trueAirspeed) > 1e-7:
+            beta = math.asin(v / trueAirspeed)
+        return beta
+    
+    #def u_dot(self, state):
+    #    pass
     
     def set_body_angle(self, roll, pitch, yaw):
         pass
     
+    '''
     def set_body_velocity(self, u, v, w):
         pass
     
+    '''
+    def uvw(self, trueAirspeed, angleOfAttack, angleOfSideslip):
+        u = trueAirspeed * math.cos(angleOfAttack) * math.cos(angleOfSideslip)
+        v = trueAirspeed * math.sin(angleOfSideslip)
+        w = trueAirspeed * math.sin(angleOfAttack) * math.cos(angleOfSideslip)
+        return u, v, w
+    
+    def set_body_velocity(self, trueAirspeed, angleOfAttack, angleOfSideslip):
+        pass
+    
     def body_velocity(self):
+        pass
+    
+    def body_acceleration(self):
+        pass
+    
+    def body_angular_acceleration(self):
         pass
     
     def set_body_angular_rate(self, p, q, r):
@@ -788,6 +808,9 @@ class BaseEom():
         pass
         
     def set_body_moment(self, bodyMoment):
+        pass
+    
+    def integrate(self, h):
         pass
 
 ###############################################################################
@@ -815,22 +838,22 @@ class FlatEom(BaseEom):
         self.clear_data()
         self.gD = self.Planet.gravity_constant_m_s2
         self.X = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        self.Xdot = [self.Udot, self.Vdot, self.Wdot, self.ϕdot, self.θdot, self.ψdot, 
+        self.Xdot = [self.u_dot, self.v_dot, self.w_dot, self.ϕdot, self.θdot, self.ψdot, 
                      self.Pdot, self.Qdot, self.Rdot, self.Ndot, self.Edot, self.Zdot]
     
     def pre_process(self):
-        #self.Planet.altitudeMsl_m = self.X[self.Zi]
+        self.record_data('bodyVelocity_m_s_X', self.X[self.Ui])
+        self.record_data('bodyVelocity_m_s_Y', self.X[self.Vi])
+        self.record_data('bodyVelocity_m_s_Z', self.X[self.Wi])
         
         self.record_data('eulerAngle_rad_Roll', self.X[self.ϕi])
         self.record_data('eulerAngle_rad_Pitch', self.X[self.θi])
         self.record_data('eulerAngle_rad_Yaw', self.X[self.ψi])
-        self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
-        
-        
+
         self.record_data('bodyAngularRate_deg_s_Roll', math.degrees(self.X[self.Pi]))
         self.record_data('bodyAngularRate_deg_s_Pitch', math.degrees(self.X[self.Qi]))
         self.record_data('bodyAngularRate_deg_s_Yaw', math.degrees(self.X[self.Ri]))
-        
+
         self.record_data('fePosition_m_X', self.X[self.Ni])
         self.record_data('fePosition_m_Y', self.X[self.Ei])
         self.record_data('fePosition_m_Z', self.X[self.Zi])
@@ -838,27 +861,7 @@ class FlatEom(BaseEom):
                     
     def post_process(self):
         self.Planet.altitudeMsl_m = self.X[self.Zi]
-        if self._store_data:
-            self.All_X.append(self.X)
-        self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
-        self.advance_time()
     
-    def make_data(self):
-        for x in self.All_X:
-            self.record_data('time', self.time_s)
-            self.time_s += self.timeStep_s
-
-            self.record_data('eulerAngle_rad_Roll', x[self.ϕi])
-            self.record_data('eulerAngle_rad_Pitch', x[self.θi])
-            self.record_data('eulerAngle_rad_Yaw', x[self.ψi])
-            self.record_data('fePosition_m_X', x[self.Ni])
-            self.record_data('fePosition_m_Y', x[self.Ei])
-            self.record_data('fePosition_m_Z', x[self.Zi])
-            self.record_data('altitudeMsl_m', x[self.Zi])
-
-            self.Planet.air_data(x[self.Zi])
-            self.record_data('speedOfSound_m_s', self.Planet.gravity_constant_m_s2)
-        
     def set_body_angle(self, roll, pitch, yaw):
         self.X[self.ϕi] = roll
         self.X[self.θi] = pitch
@@ -869,13 +872,33 @@ class FlatEom(BaseEom):
         self.X[self.Ei] = self.Planet.fePosition_m_Y
         self.X[self.Zi] = self.Planet.altitudeMsl_m
         
+        '''
     def set_body_velocity(self, u, v, w):
+        self.X[self.Ui] = u
+        self.X[self.Vi] = v
+        self.X[self.Wi] = w
+      
+        '''
+    def set_body_velocity(self, trueAirspeed, angleOfAttack, angleOfSideslip):
+        u, v, w = self.uvw(trueAirspeed, angleOfAttack, angleOfSideslip)
         self.X[self.Ui] = u
         self.X[self.Vi] = v
         self.X[self.Wi] = w
         
     def body_velocity(self):
         return [self.X[self.Ui], self.X[self.Vi], self.X[self.Wi]]
+    
+    def body_acceleration(self):
+        udot = self.u_dot(self.X)
+        vdot = self.v_dot(self.X)
+        wdot = self.w_dot(self.X)
+        return udot, vdot, wdot
+    
+    def body_angular_acceleration(self):
+        pdot = self.Pdot(self.X)
+        qdot = self.Qdot(self.X)
+        rdot = self.Rdot(self.X)
+        return pdot, qdot, rdot
         
     def set_body_angular_rate(self, p, q, r):
         self.X[self.Pi] = p
@@ -892,37 +915,37 @@ class FlatEom(BaseEom):
         assert self.totalMass_kg != 0, label
         return self.totalMass_kg
         
-    def Udot(self, state):
+    def u_dot(self, state):
         V = state[self.Vi]
         W = state[self.Wi]
         Q = state[self.Qi]
         R = state[self.Ri]
         sinθ = math.sin(state[self.θi])
-        mass = self.check_mass("Udot mass is 0")
+        mass = self.check_mass("u_dot mass is 0")
         
-        value =  R*V - Q*W - self.gD*sinθ + self.bodyForce.x / mass
-        return value
+        self.uDot =  R*V - Q*W - self.gD*sinθ + self.bodyForce.x / mass
+        return self.uDot
     
-    def Vdot(self, state):
+    def v_dot(self, state):
         U = state[self.Ui]
         W = state[self.Wi]
         P = state[self.Pi]
         R = state[self.Ri]
         sinϕ = math.sin(state[self.ϕi])
         cosθ = math.cos(state[self.θi])
-        mass = self.check_mass("Vdot mass is 0")
+        mass = self.check_mass("v_dot mass is 0")
         
         value = -R*U + P*W + self.gD*sinϕ*cosθ + self.bodyForce.y / mass
         return value
     
-    def Wdot(self, state):
+    def w_dot(self, state):
         U = state[self.Ui]
         V = state[self.Vi]
         P = state[self.Pi]
         Q = state[self.Qi]
         cosϕ = math.cos(state[self.ϕi])
         cosθ = math.cos(state[self.θi])
-        mass = self.check_mass("Wdot mass is 0")
+        mass = self.check_mass("w_dot mass is 0")
         
         value =  Q*U - P*V + self.gD*cosϕ*cosθ + self.bodyForce.z / mass
         return value
@@ -1052,16 +1075,11 @@ class FlatEom(BaseEom):
         trueAirspeed = math.sqrt(u*u + v*v + w*w)
         return trueAirspeed
     
-    def integrate(self):
+    def integrate(self, h):
         # integrate the equations of motion
-        self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
-        
-        # get dynamic pressure:  q = 1/2 rho v^2
-        dynamicPressure = (
-            self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.true_airspeed())
-        )
-        
-        return dynamicPressure
+        self.X = self.Integrator.runge_kutta_4(h, self.Xdot, self.X)
+        #self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
+        return
         
 ###############################################################################
 class OblateEom(BaseEom):
@@ -1091,12 +1109,8 @@ class OblateEom(BaseEom):
     #  e = earth centered, earth fixed ECEF
     #  n = north east down NED
     #  b = body forward right down FRD
-    Qe2n = Quaternion(1,0,0,0)
-    Qn2b = Quaternion(1,0,0,0)
     Qe2b = Quaternion(1,0,0,0)
-    Qi2e = Quaternion(1,0,0,0)
     
-    QgePosition = Quaternion(1,0,0,0)
     Roll = 0
     Pitch = 0
     Yaw = 0
@@ -1112,98 +1126,57 @@ class OblateEom(BaseEom):
                      self.Pdot, self.Qdot, self.Rdot]
         
     def pre_process(self):
+        # get X, Y, Z in in the ECF frame to calculate gravity
+        x = self.X[self.Xi]
+        y = self.X[self.Yi]
+        z = self.X[self.Zi]
+        [gx, gy, gz] = self.Planet.gravity_J2( x, y, z )
+        self.Planet.gravityV = [gx, gy, gz]
+        
         # set q frd/ecf (e2b) ECF to body
         Qe2b = Quaternion(self.X[0], self.X[1], self.X[2], self.X[3])
-        
+
         # set q ned/ecf (e2n) ECF to NED
         Qe2n = Quaternion()
         Qe2n.set_lat_lon(self.Planet.latitude_rad, self.Planet.longitude_rad)
-        
+
         # set q frd/ned (n2b) NED to body
         Qn2b = ~Qe2n * Qe2b
-        
+
         # get the euler angles from the quaternion
         [self.Roll, self.Pitch, self.Yaw] = Qn2b.euler_angles()
-        
+
         # rotate the ECF position to ECI to get the inertial position
         Qi2e = Quaternion()
         Qi2e.set_planet_rotation(self.Planet.rotationAngle_rad)
-        self.QgePosition = Quaternion( 0, self.X[self.Xi], self.X[self.Yi], self.X[self.Zi] )
-        self.QeiPosition = Qi2e * self.QgePosition * ~Qi2e
-        
+        gePositionQ = Quaternion( 0, self.X[self.Xi], self.X[self.Yi], self.X[self.Zi] )
+        eiPositionQ = Qi2e * gePositionQ * ~Qi2e
+
         self.record_data('altitudeMsl_m', self.Planet.altitudeMsl_m)
         self.record_data('latitude_rad', self.Planet.latitude_rad)
         self.record_data('longitude_rad', self.Planet.longitude_rad)
-        self.record_data('gePosition_m_X', self.X[4])
-        self.record_data('gePosition_m_Y', self.X[5])
-        self.record_data('gePosition_m_Z', self.X[6])
+        self.record_data('gePosition_m_X', self.X[self.Xi])
+        self.record_data('gePosition_m_Y', self.X[self.Yi])
+        self.record_data('gePosition_m_Z', self.X[self.Zi])
         self.record_data('eulerAngle_rad_Roll', self.Roll)
         self.record_data('eulerAngle_rad_Pitch', self.Pitch)
         self.record_data('eulerAngle_rad_Yaw', self.Yaw)
         self.record_data('bodyAngularRate_deg_s_Roll', math.degrees(self.X[self.Pi]))
         self.record_data('bodyAngularRate_deg_s_Pitch', math.degrees(self.X[self.Qi]))
         self.record_data('bodyAngularRate_deg_s_Yaw', math.degrees(self.X[self.Ri]))
-        self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
-        self.record_data('eiPosition_m_X', self.QeiPosition.x)
-        self.record_data('eiPosition_m_Y', self.QeiPosition.y)
-        self.record_data('eiPosition_m_Z', self.QeiPosition.z)
+        self.record_data('eiPosition_m_X', eiPositionQ.x)
+        self.record_data('eiPosition_m_Y', eiPositionQ.y)
+        self.record_data('eiPosition_m_Z', eiPositionQ.z)
+
+        localGravity = math.sqrt(gx*gx + gy*gy + gz*gz)
+        self.record_data('localGravity_m_s2', localGravity)
         
     def post_process(self):
-        if self._store_data:
-            self.All_X.append(self.X)
-        self.record_data('speedOfSound_m_s', self.Planet.speedOfSound_m_s)
-        self.record_data('localGravity_m_s2', self.Planet.gravityQ.magnitude())
-        
-        # advance time and set up for next integration
-        self.advance_time()
-        
         # update the latitude, longitude and altitude from ECEF X, Y, Z position
-        self.Planet.ecef_to_lla_Zhu(self.X[4], self.X[5], self.X[6])
+        self.Planet.ecef_to_lla_Zhu(self.X[self.Xi], self.X[self.Yi], self.X[self.Zi])
         
         # rotate the earth
         self.Planet.rotationAngle_rad = self.Planet.rotationRate_rad_s * self.time_s
-        
-    def make_data(self):
-        for x in All_X:
-            self.advance_time()
-            self.record_data('gePosition_m_X', x[self.Xi])
-            self.record_data('gePosition_m_Y', x[self.Yi])
-            self.record_data('gePosition_m_Z', x[self.Zi])
-            
-            self.Planet.air_data(x[self.Zi])
-            self.record_data('altitudeMsl_m', self.Planet.altitudeMsl_m)
-            self.record_data('latitude_rad', self.Planet.altitudeMsl_m)
-            self.record_data('longitude_rad', self.Planet.altitudeMsl_m)
-            self.record_data('speedOfSound_m_s', self.Planet.latitude_rad)
-            self.record_data('localGravity_m_s2', self.Planet.longitude_rad)
-            
-            # set q frd/ecf (e2b) ECF to body
-            Qe2b = Quaternion(x[self.Qni], x[1], x[2], x[3])
-
-            # set q ned/ecf (e2n) ECF to NED
-            Qe2n = Quaternion()
-            Qe2n.set_lat_lon(self.Planet.latitude_rad, self.Planet.longitude_rad)
-
-            # set q frd/ned (n2b) NED to body
-            Qn2b = ~Qe2n * Qe2b
-
-            # get the euler angles from the quaternion
-            [roll, pitch, yaw] = Qn2b.euler_angles()
-        
-            self.record_data('eulerAngle_rad_Roll', roll)
-            self.record_data('eulerAngle_rad_Pitch', pitch)
-            self.record_data('eulerAngle_rad_Yaw', yaw)
-            
-            self.record_data('trueAirspeed_m_s', self.Planet.trueAirspeed_m_s)
-            
-            # rotate the ECF position to ECI to get the inertial position
-            Qi2e = Quaternion()
-            Qi2e.set_planet_rotation(self.Planet.rotationAngle_rad)
-            QgePosition = Quaternion( 0, x[self.Xi], x[self.Yi], x[self.Zi] )
-            QeiPosition = Qi2e * self.QgePosition * ~Qi2e
-            self.record_data('eiPosition_m_X', QeiPosition.x)
-            self.record_data('eiPosition_m_Y', QeiPosition.y)
-            self.record_data('eiPosition_m_Z', QeiPosition.z)
         
     def set_body_angle(self, roll, pitch, yaw):
         lat = self.Planet.latitude_rad
@@ -1222,6 +1195,7 @@ class OblateEom(BaseEom):
         self.X[self.Yi] = y
         self.X[self.Zi] = z
         
+        '''
     def set_body_velocity(self, u, v, w):
         # transform u,v,w to ECEF velocities
         bodyVelocity = Quaternion(0, u, v, w)
@@ -1230,6 +1204,33 @@ class OblateEom(BaseEom):
         self.X[self.Vxi] = Vecf.x
         self.X[self.Vyi] = Vecf.y
         self.X[self.Vzi] = Vecf.z
+    
+    '''
+    def set_body_velocity(self, trueAirspeed, angleOfAttack, angleOfSideslip):
+        u, v, w = self.uvw(trueAirspeed, angleOfAttack, angleOfSideslip)
+        
+        # transform u,v,w to ECEF velocities
+        bodyVelocity = Quaternion(0, u, v, w)
+        Vecf = self.Qe2b * bodyVelocity * ~self.Qe2b
+        
+        self.X[self.Vxi] = Vecf.x
+        self.X[self.Vyi] = Vecf.y
+        self.X[self.Vzi] = Vecf.z
+        
+    def body_acceleration(self):
+        xdot = self.VxDot(self.X)
+        ydot = self.VyDot(self.X)
+        zdot = self.VzDot(self.X)
+        
+        ecfAcceleration = Quaternion(0, xdot, ydot, zdot)
+        bodyAcceleration = ~self.Qe2b * ecfAcceleration * self.Qe2b
+        return bodyAcceleration.x, bodyAcceleration.y, bodyAcceleration.z
+    
+    def body_angular_acceleration(self):
+        pdot = self.Pdot(self.X)
+        qdot = self.Qdot(self.X)
+        rdot = self.Rdot(self.X)
+        return pdot, qdot, rdot
         
     def set_body_angular_rate(self, p, q, r):
         self.X[self.Pi] = p
@@ -1278,20 +1279,21 @@ class OblateEom(BaseEom):
     def VxDot(self, state):
         w = self.Planet.rotationRate_rad_s
         ax = self.ecfForce.x / self.totalMass_kg
-        gx = self.Planet.gravityQ.x
+        gx = self.Planet.gravityV[0]
         xDot = ax + 2.0 * w * state[self.Vyi] + gx + state[self.Xi] * w**2
         return xDot
     
     def VyDot(self, state):
         w = self.Planet.rotationRate_rad_s
         ay = self.ecfForce.y / self.totalMass_kg
-        gy = self.Planet.gravityQ.y
+        gy = self.Planet.gravityV[1]
         yDot = ay - 2.0 * w * state[self.Vxi] + gy + state[self.Yi] * w**2 
         return yDot
     
     def VzDot(self, state):
         az = self.ecfForce.z / self.totalMass_kg
-        return (az + self.Planet.gravityQ.z)
+        gz = self.Planet.gravityV[2]
+        return (az + gz)
     
     def Wstate(self, state):
         P = state[self.Pi]
@@ -1329,7 +1331,7 @@ class OblateEom(BaseEom):
         uvw = ~self.Qe2b * vel * self.Qe2b
         return [uvw.x, uvw.y, uvw.z]
         
-    def integrate(self):
+    def integrate(self, h):
         # set q frd/ecf (e2b) ECF to body
         self.Qe2b.n = self.X[self.Qni]
         self.Qe2b.x = self.X[self.Qxi]
@@ -1339,22 +1341,11 @@ class OblateEom(BaseEom):
         # get planet rotation in the body frame
         self.Planet.bodyRotationQ = ~self.Qe2b * self.Planet.rotationQ * self.Qe2b
         
-        # get X, Y, Z in in the ECF frame to calculate gravity
-        x = self.X[self.Xi]
-        y = self.X[self.Yi]
-        z = self.X[self.Zi]
-        [gx, gy, gz] = self.Planet.gravity_J2( x, y, z )
-        self.Planet.gravityQ = Quaternion(0, gx, gy, gz)
-        
         # integrate the equations of motion
-        self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
+        self.X = self.Integrator.runge_kutta_4(h, self.Xdot, self.X)
+        #self.X = self.Integrator.runge_kutta_4(self.timeStep_s, self.Xdot, self.X)
         
-        # get dynamic pressure:  q = 1/2 rho v^2
-        dynamicPressure = (
-            self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.true_airspeed())
-        )
-        
-        return dynamicPressure
+        return
     
 ###############################################################################
 class Simulation(Convert):
@@ -1364,8 +1355,20 @@ class Simulation(Convert):
     Planet = None
     Eom = None
     
-    _use_model = False
+    _use_model = True
     model_properties = {}
+    
+    angleOfAttack = 0
+    angleOfSideslip = 0
+    mach = 0
+    
+    aeroBodyForceCoefficient_X = 0
+    aeroBodyForceCoefficient_Y = 0
+    aeroBodyForceCoefficient_Z = 0
+    
+    aeroBodyMomentCoefficient_Roll = 0
+    aeroBodyMomentCoefficient_Pitch = 0
+    aeroBodyMomentCoefficient_Yaw = 0
     
     aeroBodyForce = Quaternion() 
     aeroBodyMoment = Quaternion()
@@ -1402,6 +1405,8 @@ class Simulation(Convert):
         self.SetupString = "-- " + eom + " : " + planet + " --"
             
         self.clear_data()
+        
+        self.init_model()
         
     def clear_data(self):
         self.Data.clear()
@@ -1440,6 +1445,8 @@ class Simulation(Convert):
     
     def create_imperial_data(self, impList):
         self.Imperial['time'] = self.Eom.Metric['time']
+        self.Imperial['mach'] = self.Eom.Metric['mach']
+        
         for key in impList:
             self.Imperial[key] = []
             oUnit = impList[key][0]
@@ -1476,12 +1483,11 @@ class Simulation(Convert):
     def execute_model(self):
         pass
     
-    def use_model(self):
-        self._use_model = True
-        self.init_model()
-        
-    def trim(self):
-        pass
+    #def trim(self):
+    #    pass
+    
+    def no_model(self):
+        self._use_model = False
     
     def reset(self, ic):
         print(self.SetupString)
@@ -1501,6 +1507,14 @@ class Simulation(Convert):
         self.referenceWingChord = self.set_value("referenceWingChord")
         self.referenceWingArea = self.set_value("referenceWingArea")
         
+        self.bodyForce.x = 0
+        self.bodyForce.y = 0
+        self.bodyForce.z = 0
+        
+        self.bodyMoment.x = 0
+        self.bodyMoment.y = 0
+        self.bodyMoment.z = 0
+        
         self.aeroBodyForceCoefficient_X = 0
         self.aeroBodyForceCoefficient_Y = 0
         self.aeroBodyForceCoefficient_Z = 0
@@ -1509,9 +1523,9 @@ class Simulation(Convert):
         self.aeroBodyMomentCoefficient_Pitch = 0
         self.aeroBodyMomentCoefficient_Yaw = 0
         
-        self.thrustBodyForce_X = 0
-        self.thrustBodyForce_Y = 0
-        self.thrustBodyForce_Z = 0
+        self.thrustBodyForce.x = 0
+        self.thrustBodyForce.y = 0
+        self.thrustBodyForce.z = 0
         
         self.thrustBodyMoment.x = 0
         self.thrustBodyMoment.y = 0
@@ -1521,7 +1535,6 @@ class Simulation(Convert):
         
         self.Eom.Planet.rotationAngle_rad = 0
         self.Eom.Planet.rotationQ = Quaternion(0, 0, 0, self.Planet.rotationRate_rad_s)
-        self.Eom.Planet.trueAirspeed_m_s = trueAirspeed
         self.Eom.Planet.latitude_rad = self.set_value("latitude")
         self.Eom.Planet.longitude_rad = self.set_value("longitude")
         self.Eom.Planet.altitudeMsl_m = self.set_value("altitudeMsl")
@@ -1537,10 +1550,7 @@ class Simulation(Convert):
         
         self.angleOfAttack = self.set_value("angleOfAttack")
         self.angleOfSideslip = self.set_value("angleOfSideslip")
-        u = trueAirspeed * math.cos(self.angleOfAttack) * math.cos(self.angleOfSideslip);
-        v = trueAirspeed * math.sin(self.angleOfSideslip);
-        w = trueAirspeed * math.sin(self.angleOfAttack) * math.cos(self.angleOfSideslip);
-        self.Eom.set_body_velocity(u, v, w)
+        self.Eom.set_body_velocity(trueAirspeed, self.angleOfAttack, self.angleOfSideslip)
         
         # Set angular rates
         P = self.set_value("bodyAngularRate_Roll")
@@ -1560,56 +1570,85 @@ class Simulation(Convert):
         self.Eom.Gamma = (Jx*Jz) - (Jxz*Jxz)
         assert self.Eom.Gamma != 0, "Gamma is 0"
         
-    def run_model(self, qS):
+    def run_model(self):
+        dynamicPressure = (
+            self.Planet.dynamic_pressure(self.Planet.altitudeMsl_m, self.Eom.true_airspeed())
+        )
+        
+        # Get the qS factor for getting dimensional forces and moments
+        qS = dynamicPressure * self.referenceWingArea
+        
         # Compute the force loads from the model           
         if self._use_model:
             self.execute_model()
-            
-        # save the output coefficients
-
-        self.Eom.record_data('aeroBodyMomentCoefficient_Roll', self.aeroBodyMomentCoefficient_Roll)
-        self.Eom.record_data('aeroBodyMomentCoefficient_Pitch', self.aeroBodyMomentCoefficient_Pitch)
-        self.Eom.record_data('aeroBodyMomentCoefficient_Yaw', self.aeroBodyMomentCoefficient_Yaw)
 
         # compute the aero forces in the body frame
         self.calc_aero_body_forces(qS)
-
-        # save the aero force data
-        self.Eom.record_data('aero_bodyForce_N_X', self.aeroBodyForce.x)
-        self.Eom.record_data('aero_bodyForce_N_Y', self.aeroBodyForce.y)
-        self.Eom.record_data('aero_bodyForce_N_Z', self.aeroBodyForce.z)
 
         # calculate the dimensional aero moments
         self.calc_aero_body_moments(qS)
 
         # total body forces
-        bodyForce = self.aeroBodyForce + self.thrustBodyForce
-        self.Eom.set_body_force(bodyForce)
+        self.bodyForce = self.aeroBodyForce + self.thrustBodyForce
+        self.Eom.set_body_force(self.bodyForce)
 
         # total body moments
-        bodyMoment = self.aeroBodyMoment + self.thrustBodyMoment
-        self.Eom.set_body_moment(bodyMoment)          
+        self.bodyMoment = self.aeroBodyMoment + self.thrustBodyMoment
+        self.Eom.set_body_moment(self.bodyMoment)   
         
     def operate(self):
         self.Eom.pre_process()
         
-        dynamicPressure = self.Eom.integrate()
-        
+        true_airspeed = self.Eom.true_airspeed()
         [u, v, w] = self.Eom.body_velocity()
-        self.angleOfAttack = math.atan2(w, u)
-        self.angleOfSideslip = math.asin(v / self.Eom.Planet.trueAirspeed_m_s)
+        self.angleOfAttack = self.Eom.angleOfAttack(u, w)
+        self.angleOfSideslip = self.Eom.angleOfSideslip(v)
         
+        self.Planet.air_data(self.Eom.Planet.altitudeMsl_m)
+        speedOfSound = self.Planet.speedOfSound_m_s
+        self.mach = 0
+        if abs(speedOfSound) > 1e-7:
+            self.mach = true_airspeed / speedOfSound
+        
+        self.Eom.record_data('time', self.Eom.time_s)
+        self.Eom.record_data('trueAirspeed_m_s', true_airspeed)
+        self.Eom.record_data('angleOfAttack_rad', self.angleOfAttack)
+        self.Eom.record_data('angleOfSideslip_rad', self.angleOfSideslip)
         self.Eom.record_data('angleOfAttack_deg', math.degrees(self.angleOfAttack))
         self.Eom.record_data('angleOfSideslip_deg', math.degrees(self.angleOfSideslip))
-          
-        # Get the qS factor for getting dimensional forces and moments
-        qS = dynamicPressure * self.referenceWingArea
+
+        self.Eom.record_data('airDensity_kg_m3', self.Planet.airDensity_kg_m3)
+        self.Eom.record_data('temperature_dgK', self.Planet.temperature_dgK)
+        self.Eom.record_data('pressure_Pa', self.Planet.pressure_Pa)
+        self.Eom.record_data('speedOfSound_m_s', speedOfSound)
+        self.Eom.record_data('mach', self.mach)
         
-        self.run_model(qS)
+        self.run_model()
+        
+        self.Eom.record_data('aeroBodyMomentCoefficient_Roll', self.aeroBodyMomentCoefficient_Roll)
+        self.Eom.record_data('aeroBodyMomentCoefficient_Pitch', self.aeroBodyMomentCoefficient_Pitch)
+        self.Eom.record_data('aeroBodyMomentCoefficient_Yaw', self.aeroBodyMomentCoefficient_Yaw)
+
+        self.Eom.record_data('aero_bodyForce_N_X', self.aeroBodyForce.x)
+        self.Eom.record_data('aero_bodyForce_N_Y', self.aeroBodyForce.y)
+        self.Eom.record_data('aero_bodyForce_N_Z', self.aeroBodyForce.z)
+
+        self.Eom.record_data('aero_bodyMoment_Nm_L', self.aeroBodyMoment.x)
+        self.Eom.record_data('aero_bodyMoment_Nm_M', self.aeroBodyMoment.y)
+        self.Eom.record_data('aero_bodyMoment_Nm_N', self.aeroBodyMoment.z)
+
+        self.Eom.record_data('thrust_bodyForce_N_X', self.thrustBodyForce.x)
+        self.Eom.record_data('thrust_bodyForce_N_Y', self.thrustBodyForce.y)
+        self.Eom.record_data('thrust_bodyForce_N_Z', self.thrustBodyForce.z)
+        
+        self.Eom.integrate(self.Eom.timeStep_s)
+        
+        self.Eom.time_s += self.Eom.timeStep_s
         
         self.Eom.post_process()
         
     def run(self, numberOfSeconds):
+        self.Eom.time_s = 0
         endTime = int(numberOfSeconds / self.Eom.timeStep_s) + 1
         for i in range(endTime):
             self.operate()
